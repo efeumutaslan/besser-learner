@@ -142,7 +142,7 @@ NGINX
 
   # SSL sertifikasi
   echo "  SSL sertifikasi aliniyor..."
-  certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@$DOMAIN --redirect || {
+  certbot --nginx -d $DOMAIN --non-interactive --agree-tos --register-unsafely-without-email --redirect || {
     echo "  SSL sertifikasi alinamadi. Domain DNS ayarlarinizi kontrol edin."
     echo "  Daha sonra: certbot --nginx -d $DOMAIN"
   }
