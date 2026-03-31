@@ -1,0 +1,22 @@
+{
+  "name": "BesserLernen - Almanca Öğrenme",
+  "short_name": "BesserLernen",
+  "description": "Spaced Repetition ile Almanca kelime ve gramer öğrenme uygulaması",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#6366F1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased dark:bg-gray-900 dark:text-gray-100;
+  }
+}
+
+@layer components {
+  .card-flip {
+    perspective: 1000px;
+  }
+
+  .card-flip-inner {
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+  }
+
+  .card-flip-inner.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .card-flip-front,
+  .card-flip-back {
+    backface-visibility: hidden;
+  }
+
+  .card-flip-back {
+    transform: rotateY(180deg);
+  }
+
+  /* Artikel badge stilleri - MonoglotAnxiety renkleri */
+  .artikel-der {
+    @apply bg-blue-500 text-white;
+  }
+
+  .artikel-die {
+    @apply bg-pink-500 text-white;
+  }
+
+  .artikel-das {
+    @apply bg-green-500 text-white;
+  }
+
+  /* SRS buton stilleri */
+  .srs-btn {
+    @apply flex-1 py-3 px-2 rounded-xl font-semibold text-sm transition-all active:scale-95;
+  }
+
+  .srs-again {
+    @apply bg-red-500 hover:bg-red-600 text-white;
+  }
+
+  .srs-hard {
+    @apply bg-orange-500 hover:bg-orange-600 text-white;
+  }
+
+  .srs-good {
+    @apply bg-green-500 hover:bg-green-600 text-white;
+  }
+
+  .srs-easy {
+    @apply bg-blue-500 hover:bg-blue-600 text-white;
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}

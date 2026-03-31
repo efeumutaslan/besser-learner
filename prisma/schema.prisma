@@ -1,0 +1,155 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String   @id @default(cuid())
+  username            String   @unique
+  passwordHash        String
+  displayName         String?
+  theme               String   @default("light") // light, dark
+  defaultNewPerDay    Int      @default(20)
+  defaultReviewPerDay Int      @default(200)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  decks         Deck[]
+  studySessions StudySession[]
+  userStats     UserStats?
+  dailyActivity DailyActivity[]
+}
+
+model Deck {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  description  String?
+  color        String   @default("#6366F1")
+  newPerDay    Int      @default(20)
+  reviewPerDay Int      @default(200)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cards         Card[]
+  studySessions StudySession[]
+
+  @@index([userId])
+}
+
+model Card {
+  id     String @id @default(cuid())
+  deckId String
+  deck   Deck   @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  // Almanca kelime alanlari
+  word                String
+  wordTranslation     String
+  artikel             String?
+  plural              String?
+  nominativ           String?
+  akkusativ           String?
+  dativ               String?
+  exampleSentence     String?
+  sentenceTranslation String?
+  notes               String?
+  imageUrl            String?
+  wordAudioUrl        String?
+  sentenceAudioUrl    String?
+
+  // SRS (Spaced Repetition) - SM-2
+  interval    Int      @default(0)
+  repetitions Int      @default(0)
+  easeFactor  Float    @default(2.5)
+  dueDate     DateTime @default(now())
+  status      String   @default("NEW") // NEW, LEARNING, REVIEW, RELEARN
+  lapses      Int      @default(0)
+
+  // Anki ek ozellikler
+  suspended Boolean @default(false)
+  buried    Boolean @default(false)
+
+  // Ogrenme modu mastery (Quizlet tarzi)
+  mastery     String @default("NEW") // NEW, SEEN, FAMILIAR, MASTERED
+  correctHits Int    @default(0)     // Dogru cevap sayisi (2 = mastered)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews Review[]
+
+  @@index([deckId])
+  @@index([dueDate])
+  @@index([status])
+}
+
+model Review {
+  id         String   @id @default(cuid())
+  cardId     String
+  card       Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  quality    Int
+  interval   Int
+  easeFactor Float
+  reviewedAt DateTime @default(now())
+
+  @@index([cardId])
+  @@index([reviewedAt])
+}
+
+model StudySession {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deckId       String
+  deck         Deck      @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  type         String    // review, learn, test, match, blast
+  cardsStudied Int       @default(0)
+  correctCount Int       @default(0)
+  xpEarned     Int       @default(0)
+  gemsEarned   Int       @default(0)
+  duration     Int       @default(0)
+  startedAt    DateTime  @default(now())
+  completedAt  DateTime?
+  feedback     String?   // thumbs_up, thumbs_down
+
+  @@index([deckId])
+  @@index([userId])
+}
+
+model UserStats {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalXp        Int      @default(0)
+  totalGems      Int      @default(0)
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  lastStudyDate  String?  // YYYY-MM-DD format
+  totalCards     Int      @default(0)
+  totalSessions  Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model DailyActivity {
+  id            String @id @default(cuid())
+  userId        String
+  user          User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date          String // YYYY-MM-DD
+  cardsReviewed Int    @default(0)
+  cardsLearned  Int    @default(0)
+  correctCount  Int    @default(0)
+  wrongCount    Int    @default(0)
+  xpEarned      Int    @default(0)
+  gemsEarned    Int    @default(0)
+  totalTime     Int    @default(0) // saniye
+  sessionsCount Int    @default(0)
+
+  @@unique([userId, date])
+  @@index([userId])
+}
