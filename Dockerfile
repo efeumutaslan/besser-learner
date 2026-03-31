@@ -36,9 +36,13 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Migration script - node ile dogrudan prisma engine calistir
+RUN echo '#!/bin/sh' > /app/migrate.sh && \
+    echo 'node node_modules/prisma/build/index.js migrate deploy' >> /app/migrate.sh && \
+    chmod +x /app/migrate.sh
 
 RUN mkdir -p uploads && chown nextjs:nodejs uploads
 
@@ -47,4 +51,4 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["sh", "-c", "node_modules/.bin/prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "/app/migrate.sh && node server.js"]
