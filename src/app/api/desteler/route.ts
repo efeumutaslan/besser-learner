@@ -29,11 +29,14 @@ export async function GET() {
       const totalCards = deck._count.cards;
       const newCount = deck.cards.filter((c) => c.status === "NEW").length;
       const learningCount = deck.cards.filter(
-        (c) => c.status === "LEARNING" || c.status === "RELEARN"
+        (c) =>
+          (c.status === "LEARNING" || c.status === "RELEARN") &&
+          new Date(c.dueDate) <= now
       ).length;
       const reviewCount = deck.cards.filter(
         (c) => c.status === "REVIEW" && new Date(c.dueDate) <= now
       ).length;
+      const dueCount = learningCount + reviewCount;
 
       return {
         id: deck.id,
@@ -46,6 +49,7 @@ export async function GET() {
         newCount,
         learningCount,
         reviewCount,
+        dueCount,
         createdAt: deck.createdAt,
       };
     });

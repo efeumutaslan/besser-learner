@@ -94,7 +94,7 @@ export default function TestPage() {
   useEffect(() => {
     const fetchCards = async () => {
       try {
-        const res = await fetch(`/api/desteler/${deckId}`);
+        const res = await fetch(`/api/desteler/${deckId}/smart-pool?mode=test`);
         const data = await res.json();
         if (data.cards && data.cards.length >= 2) {
           setCards(data.cards);
@@ -242,6 +242,13 @@ export default function TestPage() {
       correct: isCorrect ? prev.correct + 1 : prev.correct,
       wrong: !isCorrect ? prev.wrong + 1 : prev.wrong,
     }));
+
+    // SRS feedback bildir
+    fetch(`/api/kartlar/${question.card.id}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isCorrect, source: "test" }),
+    }).catch(() => {});
 
     // Otomatik sonraki soruya geç
     setTimeout(() => {

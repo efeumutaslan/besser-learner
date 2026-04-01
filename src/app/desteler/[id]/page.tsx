@@ -71,6 +71,7 @@ export default function DeckDetailPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [isShuffled, setIsShuffled] = useState(false);
   const [shuffledCards, setShuffledCards] = useState<Card[]>([]);
+  const [pendingNav, setPendingNav] = useState<string | null>(null);
 
   const fetchDeck = useCallback(async (useCache = true) => {
     try {
@@ -151,7 +152,15 @@ export default function DeckDetailPage() {
 
   if (!deck) return null;
 
-  const dueCount = deck.stats.new + deck.stats.learning + deck.stats.review;
+  const dueCount = deck.stats.learning + deck.stats.review;
+
+  const handleFunModeClick = (path: string) => {
+    if (dueCount > 0) {
+      setPendingNav(path);
+    } else {
+      router.push(path);
+    }
+  };
 
   return (
     <div className="pb-20">
@@ -233,46 +242,46 @@ export default function DeckDetailPage() {
               </div>
             </div>
           </Link>
-          <Link
-            href={`/desteler/${deckId}/ogren`}
-            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-green-300 hover:bg-green-50 transition-all"
+          <button
+            onClick={() => handleFunModeClick(`/desteler/${deckId}/ogren`)}
+            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-green-300 hover:bg-green-50 dark:hover:bg-green-900/20 transition-all text-left"
           >
             <BookOpen className="w-6 h-6 text-green-600" />
             <div>
               <div className="font-semibold text-sm">Öğren</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">Yazarak öğren</div>
             </div>
-          </Link>
-          <Link
-            href={`/desteler/${deckId}/test`}
-            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-purple-300 hover:bg-purple-50 transition-all"
+          </button>
+          <button
+            onClick={() => handleFunModeClick(`/desteler/${deckId}/test`)}
+            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all text-left"
           >
             <ListChecks className="w-6 h-6 text-purple-600" />
             <div>
               <div className="font-semibold text-sm">Test</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">Çoktan seçmeli</div>
             </div>
-          </Link>
-          <Link
-            href={`/desteler/${deckId}/eslestir`}
-            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-orange-300 hover:bg-orange-50 transition-all"
+          </button>
+          <button
+            onClick={() => handleFunModeClick(`/desteler/${deckId}/eslestir`)}
+            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all text-left"
           >
             <ShuffleIcon className="w-6 h-6 text-orange-600" />
             <div>
               <div className="font-semibold text-sm">Eşleştir</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">Zamanlı eşleştirme</div>
             </div>
-          </Link>
-          <Link
-            href={`/desteler/${deckId}/blast`}
-            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-yellow-300 hover:bg-yellow-50 transition-all col-span-2"
+          </button>
+          <button
+            onClick={() => handleFunModeClick(`/desteler/${deckId}/blast`)}
+            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all text-left col-span-2"
           >
             <Zap className="w-6 h-6 text-yellow-600" />
             <div>
               <div className="font-semibold text-sm">Blast</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">Asteroid oyunu - hızlı tepki</div>
             </div>
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -462,6 +471,41 @@ export default function DeckDetailPage() {
               Desteyi Sil
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      {/* Tekrar Uyarı Dialogu */}
+      <Modal
+        isOpen={!!pendingNav}
+        onClose={() => setPendingNav(null)}
+        title="Bekleyen Tekrarlar"
+        size="sm"
+      >
+        <p className="text-gray-600 dark:text-gray-300 mb-4">
+          Bu destede <span className="font-bold text-brand-600">{dueCount} tekrar kartın</span> var.
+          Önce tekrarlarını tamamlamak ister misin?
+        </p>
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            onClick={() => {
+              const nav = pendingNav;
+              setPendingNav(null);
+              if (nav) router.push(nav);
+            }}
+            className="flex-1"
+          >
+            Devam Et
+          </Button>
+          <Button
+            onClick={() => {
+              setPendingNav(null);
+              router.push(`/desteler/${deckId}/calis`);
+            }}
+            className="flex-1"
+          >
+            Tekrar Et
+          </Button>
         </div>
       </Modal>
 

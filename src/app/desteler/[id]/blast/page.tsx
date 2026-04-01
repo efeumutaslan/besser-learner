@@ -72,7 +72,7 @@ export default function BlastPage() {
   useEffect(() => {
     const fetchCards = async () => {
       try {
-        const res = await fetch(`/api/desteler/${deckId}`);
+        const res = await fetch(`/api/desteler/${deckId}/smart-pool?mode=blast`);
         const data = await res.json();
         if (data.cards && data.cards.length >= 3) {
           setCards(data.cards);
@@ -177,6 +177,10 @@ export default function BlastPage() {
   const handleAsteroidClick = (asteroid: Asteroid) => {
     if (!playing) return;
 
+    // Prompt kartının ID'sini al (doğru cevabın kartı)
+    const correctAsteroid = asteroids.find((a) => a.isCorrect);
+    const feedbackCardId = correctAsteroid?.cardId;
+
     if (asteroid.isCorrect) {
       // Doğru
       const comboBonus = Math.min(combo, 5);
@@ -190,6 +194,15 @@ export default function BlastPage() {
       setCombo(0);
       setStats((prev) => ({ ...prev, wrong: prev.wrong + 1 }));
       setFlashColor("red");
+    }
+
+    // SRS feedback bildir
+    if (feedbackCardId) {
+      fetch(`/api/kartlar/${feedbackCardId}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isCorrect: asteroid.isCorrect, source: "blast" }),
+      }).catch(() => {});
     }
 
     setTimeout(() => setFlashColor(null), 300);

@@ -255,7 +255,7 @@ export default function LearnPage() {
   useEffect(() => {
     const fetchCards = async () => {
       try {
-        const res = await fetch(`/api/desteler/${deckId}`);
+        const res = await fetch(`/api/desteler/${deckId}/smart-pool?mode=learn`);
         const data = await res.json();
         if (data.cards && data.cards.length > 0) {
           const cards = data.cards;
@@ -352,23 +352,11 @@ export default function LearnPage() {
         return newMap;
       });
 
-      // Mastery'yi sunucuya da bildir
-      fetch(`/api/kartlar/${cardId}`, {
-        method: "PUT",
+      // SRS feedback bildir
+      fetch(`/api/kartlar/${cardId}/feedback`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mastery: isCorrect
-            ? getNextMastery(
-                (currentQuestion.card.mastery as MasteryLevel) || "NEW",
-                true,
-                currentQuestion.card.correctHits || 0
-              ).mastery
-            : getNextMastery(
-                (currentQuestion.card.mastery as MasteryLevel) || "NEW",
-                false,
-                currentQuestion.card.correctHits || 0
-              ).mastery,
-        }),
+        body: JSON.stringify({ isCorrect, source: "learn" }),
       }).catch(() => {});
     },
     [currentQuestion, result]

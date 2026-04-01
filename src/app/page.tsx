@@ -26,6 +26,7 @@ interface Deck {
   newCount: number;
   reviewCount: number;
   learningCount: number;
+  dueCount: number;
 }
 
 interface UserStats {
@@ -113,7 +114,7 @@ export default function HomePage() {
   };
 
   const totalDue = decks.reduce(
-    (sum, d) => sum + d.newCount + d.reviewCount + d.learningCount,
+    (sum, d) => sum + (d.dueCount || d.learningCount + d.reviewCount),
     0
   );
 
@@ -190,15 +191,21 @@ export default function HomePage() {
         </div>
 
         {/* Günlük durum */}
-        <div className="bg-white/10 rounded-2xl p-4 mt-3">
+        <div className={cn(
+          "rounded-2xl p-4 mt-3",
+          totalDue > 0 ? "bg-yellow-500/20 border border-yellow-400/30" : "bg-white/10"
+        )}>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+            <div className={cn(
+              "w-12 h-12 rounded-full flex items-center justify-center",
+              totalDue > 0 ? "bg-yellow-400/30 animate-pulse" : "bg-white/20"
+            )}>
               <GraduationCap className="w-6 h-6" />
             </div>
             <div>
               <p className="font-semibold">
                 {totalDue > 0
-                  ? `${totalDue} kart çalışılmayı bekliyor`
+                  ? `Bugün ${totalDue} tekrar kartın var!`
                   : "Bugünlük çalışma tamamlandı!"}
               </p>
               <p className="text-brand-200 text-sm">

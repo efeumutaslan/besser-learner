@@ -90,7 +90,7 @@ export default function MatchPage() {
   useEffect(() => {
     const fetchCards = async () => {
       try {
-        const res = await fetch(`/api/desteler/${deckId}`);
+        const res = await fetch(`/api/desteler/${deckId}/smart-pool?mode=match`);
         const data = await res.json();
         if (data.cards && data.cards.length >= 2) {
           setCards(data.cards);
@@ -119,7 +119,12 @@ export default function MatchPage() {
       if (!leftItem || !rightItem) return;
 
       if (leftItem.cardId === rightItem.cardId) {
-        // Doğru
+        // Doğru - SRS feedback bildir
+        fetch(`/api/kartlar/${leftItem.cardId}/feedback`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isCorrect: true, source: "match" }),
+        }).catch(() => {});
         setMatchResult("correct");
         setTimeout(() => {
           setLeftItems((prev) =>
