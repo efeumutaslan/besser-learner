@@ -6,6 +6,7 @@ import {
   GraduationCap,
   BarChart3,
   Settings,
+  Store,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -13,6 +14,7 @@ import { usePathname } from "next/navigation";
 const navItems = [
   { href: "/", label: "Desteler", icon: BookOpen },
   { href: "/calisma", label: "Çalış", icon: GraduationCap },
+  { href: "/market", label: "Market", icon: Store },
   { href: "/istatistik", label: "İstatistik", icon: BarChart3 },
   { href: "/ayarlar", label: "Ayarlar", icon: Settings },
 ];
