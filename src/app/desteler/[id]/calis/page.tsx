@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { cn, getArtikelBadgeColor, getArtikelColor } from "@/lib/utils";
 import { getEstimatedIntervals, type AnkiRating } from "@/lib/srs";
+import { parseDeckSettings } from "@/lib/srs-settings";
 import Button from "@/components/ui/Button";
 import LessonComplete from "@/components/LessonComplete";
 import {
@@ -31,11 +32,25 @@ interface StudyCard {
   repetitions: number;
   easeFactor: number;
   lapses: number;
+  learningStep?: number;
   status: string;
 }
 
 interface StudyData {
-  deck: { id: string; name: string };
+  deck: {
+    id: string;
+    name: string;
+    learningSteps?: string;
+    graduatingInterval?: number;
+    easyInterval?: number;
+    relearningSteps?: string;
+    lapseMinInterval?: number;
+    maxInterval?: number;
+    startingEase?: number;
+    easyBonus?: number;
+    intervalModifier?: number;
+    hardModifier?: number;
+  };
   queue: StudyCard[];
   counts: {
     learning: number;
@@ -167,12 +182,17 @@ export default function StudyPage() {
     ? ((currentIndex) / data.queue.length) * 100
     : 0;
 
-  const intervals = getEstimatedIntervals({
-    interval: currentCard.interval,
-    repetitions: currentCard.repetitions,
-    easeFactor: currentCard.easeFactor,
-    lapses: currentCard.lapses,
-  });
+  const deckSettings = data?.deck ? parseDeckSettings(data.deck) : undefined;
+  const intervals = getEstimatedIntervals(
+    {
+      interval: currentCard.interval,
+      repetitions: currentCard.repetitions,
+      easeFactor: currentCard.easeFactor,
+      lapses: currentCard.lapses,
+      learningStep: currentCard.learningStep ?? 0,
+    },
+    deckSettings
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">

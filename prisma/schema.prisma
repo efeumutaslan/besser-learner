@@ -33,6 +33,20 @@ model Deck {
   color        String   @default("#6366F1")
   newPerDay    Int      @default(20)
   reviewPerDay Int      @default(200)
+
+  // SRS Ayarlari (Anki tarzi, per-deck)
+  learningSteps      String  @default("1,10")    // dakika, virgulle ayrilmis
+  graduatingInterval Int     @default(1)          // gun
+  easyInterval       Int     @default(4)          // gun
+  relearningSteps    String  @default("10")       // dakika
+  lapseMinInterval   Int     @default(1)          // gun
+  leechThreshold     Int     @default(8)
+  maxInterval        Int     @default(36500)       // ~100 yil
+  startingEase       Int     @default(250)         // 2.50 (100x)
+  easyBonus          Int     @default(130)         // 1.30x (100x)
+  intervalModifier   Int     @default(100)         // 1.00x (100x)
+  hardModifier       Int     @default(120)         // 1.20x (100x)
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -69,6 +83,9 @@ model Card {
   dueDate     DateTime @default(now())
   status      String   @default("NEW") // NEW, LEARNING, REVIEW, RELEARN
   lapses      Int      @default(0)
+
+  // Cok adimli ogrenme indeksi
+  learningStep Int @default(0)
 
   // Anki ek ozellikler
   suspended Boolean @default(false)

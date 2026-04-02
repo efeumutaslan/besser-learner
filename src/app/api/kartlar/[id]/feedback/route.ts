@@ -1,11 +1,12 @@
 import { db } from "@/lib/db";
 import { requireAuth, requireCardOwnership } from "@/lib/auth";
 import { calculateNextReview } from "@/lib/srs";
+import { parseDeckSettings } from "@/lib/srs-settings";
 import { getNextMastery, type MasteryLevel } from "@/lib/gamification";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST - Fun modlardan SRS geri bildirimi
-// Mastery her zaman güncellenir, SRS günde 1 kez uygulanır (dedup)
+// Mastery her zaman guncellenir, SRS gunde 1 kez uygulanir (dedup)
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -26,14 +27,14 @@ export async function POST(
       );
     }
 
-    // 1. Mastery her zaman güncellenir
+    // 1. Mastery her zaman guncellenir
     const masteryResult = getNextMastery(
       card.mastery as MasteryLevel,
       isCorrect,
       card.correctHits
     );
 
-    // 2. SRS günde 1 kez uygulanır (aynı gün aynı karttan tekrar feedback gelirse sadece mastery güncelle)
+    // 2. SRS gunde 1 kez uygulanir
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -46,22 +47,30 @@ export async function POST(
 
     const shouldApplySRS = todayFeedbackCount === 0;
 
-    let srsUpdate = {};
+    let srsUpdate: Record<string, unknown> = {};
 
     if (shouldApplySRS) {
+      // Deck SRS ayarlarini al
+      const deck = await db.deck.findUnique({
+        where: { id: card.deckId },
+      });
+      const settings = parseDeckSettings(deck ?? {});
+
       if (card.status === "NEW") {
         if (isCorrect) {
-          // NEW + doğru → SRS'e tanıt (LEARNING)
+          // NEW + dogru -> ogrenme adimina al
+          const steps = settings.learningSteps;
           srsUpdate = {
             status: "LEARNING",
-            dueDate: new Date(Date.now() + 10 * 60 * 1000), // 10dk sonra
+            dueDate: new Date(Date.now() + (steps[0] ?? 1) * 60 * 1000),
             repetitions: 0,
             interval: 0,
+            learningStep: 0,
           };
         }
-        // NEW + yanlış → SRS değişmez, sadece mastery SEEN olur (yukarıda zaten)
+        // NEW + yanlis -> SRS degismez, sadece mastery SEEN olur
       } else {
-        // LEARNING/REVIEW/RELEARN kartlar için soft SRS rating
+        // LEARNING/REVIEW/RELEARN kartlar icin soft SRS rating
         const rating = isCorrect ? "good" : "again";
         const result = calculateNextReview(
           {
@@ -69,8 +78,10 @@ export async function POST(
             repetitions: card.repetitions,
             easeFactor: card.easeFactor,
             lapses: card.lapses,
+            learningStep: card.learningStep,
           },
-          rating
+          rating,
+          settings
         );
         srsUpdate = {
           interval: result.interval,
@@ -79,11 +90,12 @@ export async function POST(
           dueDate: result.dueDate,
           status: result.status,
           lapses: result.lapses,
+          learningStep: result.learningStep,
         };
       }
     }
 
-    // Kart güncelle
+    // Kart guncelle
     const updatedCard = await db.card.update({
       where: { id: params.id },
       data: {
@@ -93,17 +105,17 @@ export async function POST(
       },
     });
 
-    // SRS uygulandıysa review kaydı oluştur
+    // SRS uygulandiysa review kaydi olustur
     if (shouldApplySRS && (card.status !== "NEW" || isCorrect)) {
       await db.review.create({
         data: {
           cardId: params.id,
           quality: isCorrect ? 4 : 0,
-          interval: typeof (srsUpdate as Record<string, unknown>).interval === "number"
-            ? (srsUpdate as Record<string, unknown>).interval as number
+          interval: typeof srsUpdate.interval === "number"
+            ? srsUpdate.interval as number
             : card.interval,
-          easeFactor: typeof (srsUpdate as Record<string, unknown>).easeFactor === "number"
-            ? (srsUpdate as Record<string, unknown>).easeFactor as number
+          easeFactor: typeof srsUpdate.easeFactor === "number"
+            ? srsUpdate.easeFactor as number
             : card.easeFactor,
         },
       });
@@ -117,10 +129,10 @@ export async function POST(
     });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
+      return NextResponse.json({ error: "Yetkisiz erisim" }, { status: 401 });
     }
     if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Kart bulunamadı" }, { status: 404 });
+      return NextResponse.json({ error: "Kart bulunamadi" }, { status: 404 });
     }
     console.error("Feedback error:", error);
     return NextResponse.json(

@@ -34,6 +34,20 @@ model Deck {
   color        String   @default("#6366F1")
   newPerDay    Int      @default(20)
   reviewPerDay Int      @default(200)
+
+  // SRS Ayarlari (Anki tarzi, per-deck)
+  learningSteps      String  @default("1,10")
+  graduatingInterval Int     @default(1)
+  easyInterval       Int     @default(4)
+  relearningSteps    String  @default("10")
+  lapseMinInterval   Int     @default(1)
+  leechThreshold     Int     @default(8)
+  maxInterval        Int     @default(36500)
+  startingEase       Int     @default(250)
+  easyBonus          Int     @default(130)
+  intervalModifier   Int     @default(100)
+  hardModifier       Int     @default(120)
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -68,6 +82,8 @@ model Card {
   dueDate     DateTime @default(now())
   status      String   @default("NEW")
   lapses      Int      @default(0)
+
+  learningStep Int @default(0)
 
   suspended Boolean @default(false)
   buried    Boolean @default(false)

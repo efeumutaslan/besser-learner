@@ -1,21 +1,24 @@
 /**
  * SM-2 Spaced Repetition Algorithm
- * Anki'nin kullandığı algoritmanın birebir implementasyonu
+ * Anki'nin kullandigi algoritmanin ayarlanabilir implementasyonu
  *
- * Kalite puanları:
- * 0 - Hiç hatırlamadım
- * 1 - Yanlış, ama doğru cevabı görünce hatırladım
- * 2 - Yanlış, ama doğru cevap kolay hatırlandı
- * 3 - Doğru, ama çok zorlandım
- * 4 - Doğru, biraz düşündüm
- * 5 - Doğru, çok kolaydı
+ * Kalite puanlari:
+ * 0 - Hic hatirlamadim
+ * 1 - Yanlis, ama dogru cevabi gorunce hatirladim
+ * 2 - Yanlis, ama dogru cevap kolay hatirlandi
+ * 3 - Dogru, ama cok zorlandim
+ * 4 - Dogru, biraz dusundum
+ * 5 - Dogru, cok kolaydi
  */
+
+import { type SRSSettings, DEFAULT_SRS_SETTINGS } from "./srs-settings";
 
 export interface SRSCard {
   interval: number;
   repetitions: number;
   easeFactor: number;
   lapses: number;
+  learningStep?: number; // cok adimli ogrenme indeksi
 }
 
 export interface SRSResult {
@@ -25,12 +28,13 @@ export interface SRSResult {
   dueDate: Date;
   status: "NEW" | "LEARNING" | "REVIEW" | "RELEARN";
   lapses: number;
+  learningStep: number;
 }
 
-// Anki'nin kullandığı kalite butonları
+// Anki'nin kullandigi kalite butonlari
 export type AnkiRating = "again" | "hard" | "good" | "easy";
 
-// Rating'i SM-2 kalite puanına çevir
+// Rating'i SM-2 kalite puanina cevir
 function ratingToQuality(rating: AnkiRating): number {
   switch (rating) {
     case "again":
@@ -46,65 +50,132 @@ function ratingToQuality(rating: AnkiRating): number {
 
 export function calculateNextReview(
   card: SRSCard,
-  rating: AnkiRating
+  rating: AnkiRating,
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS
 ): SRSResult {
   const quality = ratingToQuality(rating);
   let { interval, repetitions, easeFactor, lapses } = card;
+  const learningStep = card.learningStep ?? 0;
 
+  // --- AGAIN: basarisiz ---
   if (quality < 3) {
-    // Başarısız - kartı sıfırla
-    repetitions = 0;
-    interval = 0;
     lapses = lapses + 1;
 
+    // Relearning adimlari
+    const reSteps = settings.relearningSteps;
+    const reStepMinutes = reSteps.length > 0 ? reSteps[0] : 10;
+
     return {
-      interval: 1, // 1 gün sonra tekrar göster (yeni öğrenme)
+      interval: Math.max(settings.lapseMinInterval, 1),
       repetitions: 0,
       easeFactor: Math.max(1.3, easeFactor - 0.2),
-      dueDate: addMinutes(new Date(), 10), // 10 dakika sonra tekrar
+      dueDate: addMinutes(new Date(), reStepMinutes),
       status: "RELEARN",
       lapses,
+      learningStep: 0,
     };
   }
 
-  // Başarılı cevap
-  // Ease Factor güncelle
+  // --- LEARNING / ilk adimlar (rep=0) ---
+  if (repetitions === 0) {
+    const steps = settings.learningSteps;
+
+    if (rating === "easy") {
+      // Easy -> direkt mezun, easyInterval gun sonra
+      return {
+        interval: settings.easyInterval,
+        repetitions: 1,
+        easeFactor: Math.max(1.3, settings.startingEase),
+        dueDate: addDays(new Date(), settings.easyInterval),
+        status: "REVIEW",
+        lapses,
+        learningStep: steps.length,
+      };
+    }
+
+    if (rating === "good") {
+      const nextStep = learningStep + 1;
+
+      if (nextStep >= steps.length) {
+        // Son adimi gec -> mezuniyet
+        return {
+          interval: settings.graduatingInterval,
+          repetitions: 1,
+          easeFactor: Math.max(1.3, settings.startingEase),
+          dueDate: addDays(new Date(), settings.graduatingInterval),
+          status: "REVIEW",
+          lapses,
+          learningStep: steps.length,
+        };
+      }
+
+      // Bir sonraki ogrenme adimi
+      const nextMinutes = steps[nextStep];
+      return {
+        interval: 0,
+        repetitions: 0,
+        easeFactor: Math.max(1.3, settings.startingEase),
+        dueDate: addMinutes(new Date(), nextMinutes),
+        status: "LEARNING",
+        lapses,
+        learningStep: nextStep,
+      };
+    }
+
+    // Hard -> ayni adimda kal, suresi 1.2x
+    const currentMinutes = steps[learningStep] ?? 1;
+    const hardMinutes = Math.round(currentMinutes * settings.hardModifier);
+    return {
+      interval: 0,
+      repetitions: 0,
+      easeFactor: Math.max(1.3, settings.startingEase),
+      dueDate: addMinutes(new Date(), hardMinutes),
+      status: "LEARNING",
+      lapses,
+      learningStep: learningStep,
+    };
+  }
+
+  // --- REVIEW: olgun kart (rep >= 1) ---
+
+  // Ease Factor guncelle (SM-2 formulu)
   const newEF =
     easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02));
   easeFactor = Math.max(1.3, newEF);
 
   // Interval hesapla
-  if (repetitions === 0) {
-    interval = 1;
-  } else if (repetitions === 1) {
-    interval = 6;
+  if (repetitions === 1) {
+    interval = settings.graduatingInterval;
   } else {
-    interval = Math.round(interval * easeFactor);
+    interval = Math.round(interval * easeFactor * settings.intervalModifier);
   }
 
-  // Hard seçildiyse interval'i biraz azalt
+  // Hard -> interval * hardModifier (0.8x yerine settings'ten)
   if (rating === "hard") {
-    interval = Math.max(1, Math.round(interval * 0.8));
+    // Anki'de hard icin: interval * 1.2 * intervalModifier ama ease dusurulur
+    // Biz burada hardModifier / easeFactor oranini kullaniyoruz
+    interval = Math.max(1, Math.round(interval * (settings.hardModifier / easeFactor)));
   }
 
-  // Easy seçildiyse interval'i artır
+  // Easy -> interval * easyBonus
   if (rating === "easy") {
-    interval = Math.round(interval * 1.3);
+    interval = Math.round(interval * settings.easyBonus);
   }
+
+  // maxInterval sinirlama
+  interval = Math.min(interval, settings.maxInterval);
+  interval = Math.max(1, interval);
 
   repetitions = repetitions + 1;
-
-  const dueDate = new Date();
-  dueDate.setDate(dueDate.getDate() + interval);
-  dueDate.setHours(0, 0, 0, 0);
 
   return {
     interval,
     repetitions,
     easeFactor,
-    dueDate,
-    status: repetitions <= 1 ? "LEARNING" : "REVIEW",
+    dueDate: addDays(new Date(), interval),
+    status: "REVIEW",
     lapses,
+    learningStep: 0,
   };
 }
 
@@ -112,7 +183,14 @@ function addMinutes(date: Date, minutes: number): Date {
   return new Date(date.getTime() + minutes * 60 * 1000);
 }
 
-// Bir deste için bugün çalışılacak kartları hesapla
+function addDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + days);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Bir deste icin bugun calisilacak kartlari hesapla
 export function getDueCards(params: {
   newPerDay: number;
   reviewPerDay: number;
@@ -128,7 +206,7 @@ export function getDueCards(params: {
   return { remainingNew, remainingReview };
 }
 
-// Sonraki tekrar için okunabilir süre
+// Sonraki tekrar icin okunabilir sure
 export function formatInterval(interval: number): string {
   if (interval === 0) return "Şimdi";
   if (interval === 1) return "1 gün";
@@ -141,18 +219,32 @@ export function formatInterval(interval: number): string {
   return `${years} yıl`;
 }
 
-// Tahmini sonraki tekrar aralıkları (butonlarda gösterilecek)
-export function getEstimatedIntervals(card: SRSCard): Record<AnkiRating, string> {
+// Tahmini sonraki tekrar araliklari (butonlarda gosterilecek)
+export function getEstimatedIntervals(
+  card: SRSCard,
+  settings: SRSSettings = DEFAULT_SRS_SETTINGS
+): Record<AnkiRating, string> {
+  const steps = card.repetitions === 0 ? settings.learningSteps : [];
+  const currentStep = card.learningStep ?? 0;
+
   return {
-    again: "10dk",
-    hard: formatInterval(
-      calculateNextReview(card, "hard").interval
-    ),
-    good: formatInterval(
-      calculateNextReview(card, "good").interval
-    ),
-    easy: formatInterval(
-      calculateNextReview(card, "easy").interval
-    ),
+    again:
+      settings.relearningSteps.length > 0
+        ? `${settings.relearningSteps[0]}dk`
+        : "10dk",
+    hard:
+      card.repetitions === 0
+        ? `${Math.round((steps[currentStep] ?? 1) * settings.hardModifier)}dk`
+        : formatInterval(calculateNextReview(card, "hard", settings).interval),
+    good:
+      card.repetitions === 0 && currentStep + 1 < steps.length
+        ? `${steps[currentStep + 1]}dk`
+        : card.repetitions === 0
+        ? `${settings.graduatingInterval}g`
+        : formatInterval(calculateNextReview(card, "good", settings).interval),
+    easy:
+      card.repetitions === 0
+        ? `${settings.easyInterval}g`
+        : formatInterval(calculateNextReview(card, "easy", settings).interval),
   };
 }

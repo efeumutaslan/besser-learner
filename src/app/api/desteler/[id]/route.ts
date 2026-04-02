@@ -71,7 +71,13 @@ export async function PUT(
     await requireDeckOwnership(params.id, user.id);
 
     const body = await request.json();
-    const { name, description, color, newPerDay, reviewPerDay } = body;
+    const {
+      name, description, color, newPerDay, reviewPerDay,
+      // SRS ayarlari
+      learningSteps, graduatingInterval, easyInterval,
+      relearningSteps, lapseMinInterval, leechThreshold,
+      maxInterval, startingEase, easyBonus, intervalModifier, hardModifier,
+    } = body;
 
     const deck = await db.deck.update({
       where: { id: params.id },
@@ -83,6 +89,18 @@ export async function PUT(
         ...(color !== undefined && { color }),
         ...(newPerDay !== undefined && { newPerDay }),
         ...(reviewPerDay !== undefined && { reviewPerDay }),
+        // SRS ayarlari
+        ...(learningSteps !== undefined && { learningSteps }),
+        ...(graduatingInterval !== undefined && { graduatingInterval }),
+        ...(easyInterval !== undefined && { easyInterval }),
+        ...(relearningSteps !== undefined && { relearningSteps }),
+        ...(lapseMinInterval !== undefined && { lapseMinInterval }),
+        ...(leechThreshold !== undefined && { leechThreshold }),
+        ...(maxInterval !== undefined && { maxInterval }),
+        ...(startingEase !== undefined && { startingEase }),
+        ...(easyBonus !== undefined && { easyBonus }),
+        ...(intervalModifier !== undefined && { intervalModifier }),
+        ...(hardModifier !== undefined && { hardModifier }),
       },
     });
 

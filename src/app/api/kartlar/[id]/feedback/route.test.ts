@@ -5,6 +5,7 @@ vi.mock("@/lib/db", () => ({
   db: {
     review: { count: vi.fn(), create: vi.fn() },
     card: { update: vi.fn() },
+    deck: { findUnique: vi.fn() },
   },
 }));
 
@@ -20,6 +21,23 @@ import { NextRequest } from "next/server";
 
 const mockUser = { id: "user-1", username: "test", displayName: "Test", theme: "system" };
 
+function mockCard(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "card-1",
+    deckId: "deck-1",
+    mastery: "NEW",
+    correctHits: 0,
+    status: "NEW",
+    interval: 0,
+    repetitions: 0,
+    easeFactor: 2.5,
+    lapses: 0,
+    learningStep: 0,
+    deck: { userId: "user-1" },
+    ...overrides,
+  } as never;
+}
+
 function makeRequest(body: Record<string, unknown>, cardId = "card-1") {
   return new NextRequest(`http://localhost/api/kartlar/${cardId}/feedback`, {
     method: "POST",
@@ -33,42 +51,38 @@ function makeParams(id = "card-1") {
 }
 
 describe("POST /api/kartlar/[id]/feedback", () => {
+  const mockDeck = {
+    id: "deck-1",
+    learningSteps: "1,10",
+    graduatingInterval: 1,
+    easyInterval: 4,
+    relearningSteps: "10",
+    lapseMinInterval: 1,
+    leechThreshold: 8,
+    maxInterval: 36500,
+    startingEase: 250,
+    easyBonus: 130,
+    intervalModifier: 100,
+    hardModifier: 120,
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(requireAuth).mockResolvedValue(mockUser);
+    vi.mocked(db.deck.findUnique).mockResolvedValue(mockDeck as never);
   });
 
   // --- Validation ---
 
   it("should return 400 if isCorrect is missing", async () => {
-    vi.mocked(requireCardOwnership).mockResolvedValue({
-      id: "card-1",
-      mastery: "NEW",
-      correctHits: 0,
-      status: "NEW",
-      interval: 0,
-      repetitions: 0,
-      easeFactor: 2.5,
-      lapses: 0,
-      deck: { userId: "user-1" },
-    } as never);
+    vi.mocked(requireCardOwnership).mockResolvedValue(mockCard());
 
     const res = await POST(makeRequest({ source: "learn" }), makeParams());
     expect(res.status).toBe(400);
   });
 
   it("should return 400 if source is missing", async () => {
-    vi.mocked(requireCardOwnership).mockResolvedValue({
-      id: "card-1",
-      mastery: "NEW",
-      correctHits: 0,
-      status: "NEW",
-      interval: 0,
-      repetitions: 0,
-      easeFactor: 2.5,
-      lapses: 0,
-      deck: { userId: "user-1" },
-    } as never);
+    vi.mocked(requireCardOwnership).mockResolvedValue(mockCard());
 
     const res = await POST(makeRequest({ isCorrect: true }), makeParams());
     expect(res.status).toBe(400);
@@ -97,17 +111,7 @@ describe("POST /api/kartlar/[id]/feedback", () => {
   // --- NEW card + correct ---
 
   it("should set status LEARNING for NEW card + correct (first today)", async () => {
-    vi.mocked(requireCardOwnership).mockResolvedValue({
-      id: "card-1",
-      mastery: "NEW",
-      correctHits: 0,
-      status: "NEW",
-      interval: 0,
-      repetitions: 0,
-      easeFactor: 2.5,
-      lapses: 0,
-      deck: { userId: "user-1" },
-    } as never);
+    vi.mocked(requireCardOwnership).mockResolvedValue(mockCard());
 
     vi.mocked(db.review.count).mockResolvedValue(0); // no reviews today
     vi.mocked(db.card.update).mockResolvedValue({ id: "card-1" } as never);
@@ -131,17 +135,7 @@ describe("POST /api/kartlar/[id]/feedback", () => {
   // --- NEW card + wrong ---
 
   it("should not apply SRS for NEW card + wrong", async () => {
-    vi.mocked(requireCardOwnership).mockResolvedValue({
-      id: "card-1",
-      mastery: "NEW",
-      correctHits: 0,
-      status: "NEW",
-      interval: 0,
-      repetitions: 0,
-      easeFactor: 2.5,
-      lapses: 0,
-      deck: { userId: "user-1" },
-    } as never);
+    vi.mocked(requireCardOwnership).mockResolvedValue(mockCard());
 
     vi.mocked(db.review.count).mockResolvedValue(0);
     vi.mocked(db.card.update).mockResolvedValue({ id: "card-1" } as never);
@@ -164,17 +158,13 @@ describe("POST /api/kartlar/[id]/feedback", () => {
   // --- SRS dedup ---
 
   it("should not apply SRS if already reviewed today (dedup)", async () => {
-    vi.mocked(requireCardOwnership).mockResolvedValue({
-      id: "card-1",
+    vi.mocked(requireCardOwnership).mockResolvedValue(mockCard({
       mastery: "FAMILIAR",
       correctHits: 1,
       status: "LEARNING",
       interval: 1,
       repetitions: 1,
-      easeFactor: 2.5,
-      lapses: 0,
-      deck: { userId: "user-1" },
-    } as never);
+    }));
 
     vi.mocked(db.review.count).mockResolvedValue(1); // already reviewed today
     vi.mocked(db.card.update).mockResolvedValue({ id: "card-1" } as never);
@@ -201,17 +191,13 @@ describe("POST /api/kartlar/[id]/feedback", () => {
   // --- LEARNING card + correct with SRS ---
 
   it("should apply SRS for LEARNING card + correct", async () => {
-    vi.mocked(requireCardOwnership).mockResolvedValue({
-      id: "card-1",
+    vi.mocked(requireCardOwnership).mockResolvedValue(mockCard({
       mastery: "FAMILIAR",
       correctHits: 1,
       status: "LEARNING",
       interval: 1,
       repetitions: 1,
-      easeFactor: 2.5,
-      lapses: 0,
-      deck: { userId: "user-1" },
-    } as never);
+    }));
 
     vi.mocked(db.review.count).mockResolvedValue(0);
     vi.mocked(db.card.update).mockResolvedValue({ id: "card-1" } as never);

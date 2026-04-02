@@ -48,6 +48,18 @@ interface DeckDetail {
   color: string;
   newPerDay: number;
   reviewPerDay: number;
+  // SRS ayarlari
+  learningSteps: string;
+  graduatingInterval: number;
+  easyInterval: number;
+  relearningSteps: string;
+  lapseMinInterval: number;
+  leechThreshold: number;
+  maxInterval: number;
+  startingEase: number;
+  easyBonus: number;
+  intervalModifier: number;
+  hardModifier: number;
   cards: Card[];
   stats: {
     total: number;
@@ -72,6 +84,21 @@ export default function DeckDetailPage() {
   const [isShuffled, setIsShuffled] = useState(false);
   const [shuffledCards, setShuffledCards] = useState<Card[]>([]);
   const [pendingNav, setPendingNav] = useState<string | null>(null);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [srsForm, setSrsForm] = useState({
+    newPerDay: 20,
+    reviewPerDay: 200,
+    learningSteps: "1,10",
+    graduatingInterval: 1,
+    easyInterval: 4,
+    relearningSteps: "10",
+    lapseMinInterval: 1,
+    startingEase: 250,
+    easyBonus: 130,
+    intervalModifier: 100,
+    hardModifier: 120,
+    maxInterval: 36500,
+  });
 
   const fetchDeck = useCallback(async (useCache = true) => {
     try {
@@ -88,6 +115,45 @@ export default function DeckDetailPage() {
   useEffect(() => {
     fetchDeck();
   }, [fetchDeck]);
+
+  // Deck yuklenince SRS form'u doldur
+  useEffect(() => {
+    if (deck) {
+      setSrsForm({
+        newPerDay: deck.newPerDay,
+        reviewPerDay: deck.reviewPerDay,
+        learningSteps: deck.learningSteps ?? "1,10",
+        graduatingInterval: deck.graduatingInterval ?? 1,
+        easyInterval: deck.easyInterval ?? 4,
+        relearningSteps: deck.relearningSteps ?? "10",
+        lapseMinInterval: deck.lapseMinInterval ?? 1,
+        startingEase: deck.startingEase ?? 250,
+        easyBonus: deck.easyBonus ?? 130,
+        intervalModifier: deck.intervalModifier ?? 100,
+        hardModifier: deck.hardModifier ?? 120,
+        maxInterval: deck.maxInterval ?? 36500,
+      });
+    }
+  }, [deck]);
+
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      const res = await fetch(`/api/desteler/${deckId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(srsForm),
+      });
+      if (res.ok) {
+        setShowSettings(false);
+        fetchDeck(false);
+      }
+    } catch (err) {
+      console.error("Ayarlar kaydedilemedi:", err);
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const handleAddCard = async (data: CardFormData) => {
     const res = await fetch("/api/kartlar", {
@@ -442,26 +508,153 @@ export default function DeckDetailPage() {
         </div>
       </Modal>
 
-      {/* Deste Ayarları Modal */}
+      {/* Deste Ayarlari Modal */}
       <Modal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
-        title="Deste Ayarları"
+        title="Deste Ayarlari"
+        size="lg"
       >
-        <div className="space-y-4">
-          <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Günlük yeni kart</span>
-              <span className="font-semibold">{deck.newPerDay}</span>
+        <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
+          {/* Gunluk Limitler */}
+          <div>
+            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Gunluk Limitler</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Yeni kart / gun</label>
+                <input type="number" min={0} max={999}
+                  value={srsForm.newPerDay}
+                  onChange={(e) => setSrsForm(p => ({ ...p, newPerDay: +e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Tekrar / gun</label>
+                <input type="number" min={0} max={9999}
+                  value={srsForm.reviewPerDay}
+                  onChange={(e) => setSrsForm(p => ({ ...p, reviewPerDay: +e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
             </div>
           </div>
-          <div className="p-3 bg-gray-50 dark:bg-gray-900 rounded-xl">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">Günlük tekrar limiti</span>
-              <span className="font-semibold">{deck.reviewPerDay}</span>
+
+          {/* Ogrenme Adimlari */}
+          <div>
+            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Ogrenme</h4>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Ogrenme adimlari (dk, virgul ile)</label>
+                <input type="text"
+                  value={srsForm.learningSteps}
+                  onChange={(e) => setSrsForm(p => ({ ...p, learningSteps: e.target.value }))}
+                  placeholder="1,10"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Mezuniyet araligi (gun)</label>
+                  <input type="number" min={1} max={365}
+                    value={srsForm.graduatingInterval}
+                    onChange={(e) => setSrsForm(p => ({ ...p, graduatingInterval: +e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Kolay araligi (gun)</label>
+                  <input type="number" min={1} max={365}
+                    value={srsForm.easyInterval}
+                    onChange={(e) => setSrsForm(p => ({ ...p, easyInterval: +e.target.value }))}
+                    className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <div className="border-t pt-4">
+
+          {/* Hatirlamama (Lapse) */}
+          <div>
+            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Hatirlamama</h4>
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Tekrar ogrenme adimlari (dk)</label>
+                <input type="text"
+                  value={srsForm.relearningSteps}
+                  onChange={(e) => setSrsForm(p => ({ ...p, relearningSteps: e.target.value }))}
+                  placeholder="10"
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Minimum aralik (gun)</label>
+                <input type="number" min={1} max={365}
+                  value={srsForm.lapseMinInterval}
+                  onChange={(e) => setSrsForm(p => ({ ...p, lapseMinInterval: +e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Gelismis Ayarlar */}
+          <div>
+            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Gelismis</h4>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Baslangic kolayligi (%)</label>
+                <input type="number" min={130} max={500}
+                  value={srsForm.startingEase}
+                  onChange={(e) => setSrsForm(p => ({ ...p, startingEase: +e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Kolay bonusu (%)</label>
+                <input type="number" min={100} max={500}
+                  value={srsForm.easyBonus}
+                  onChange={(e) => setSrsForm(p => ({ ...p, easyBonus: +e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Aralik carpani (%)</label>
+                <input type="number" min={50} max={300}
+                  value={srsForm.intervalModifier}
+                  onChange={(e) => setSrsForm(p => ({ ...p, intervalModifier: +e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Zor carpani (%)</label>
+                <input type="number" min={100} max={300}
+                  value={srsForm.hardModifier}
+                  onChange={(e) => setSrsForm(p => ({ ...p, hardModifier: +e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Maks aralik (gun)</label>
+                <input type="number" min={1} max={36500}
+                  value={srsForm.maxInterval}
+                  onChange={(e) => setSrsForm(p => ({ ...p, maxInterval: +e.target.value }))}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Butonlar */}
+          <div className="flex gap-3 pt-2 border-t dark:border-gray-700">
+            <Button
+              onClick={handleSaveSettings}
+              loading={savingSettings}
+              className="flex-1"
+            >
+              Kaydet
+            </Button>
+          </div>
+          <div className="pt-2">
             <Button
               variant="danger"
               onClick={handleDeleteDeck}

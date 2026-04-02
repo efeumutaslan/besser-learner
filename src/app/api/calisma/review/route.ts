@@ -1,9 +1,10 @@
 import { db } from "@/lib/db";
 import { requireAuth, requireCardOwnership } from "@/lib/auth";
 import { calculateNextReview, type AnkiRating } from "@/lib/srs";
+import { parseDeckSettings } from "@/lib/srs-settings";
 import { NextRequest, NextResponse } from "next/server";
 
-// POST - Kart tekrarını kaydet
+// POST - Kart tekrarini kaydet
 export async function POST(request: NextRequest) {
   try {
     const user = await requireAuth();
@@ -15,54 +16,63 @@ export async function POST(request: NextRequest) {
 
     if (!cardId || !rating) {
       return NextResponse.json(
-        { error: "Kart ID ve değerlendirme gerekli" },
+        { error: "Kart ID ve degerlendirme gerekli" },
         { status: 400 }
       );
     }
 
     if (!["again", "hard", "good", "easy"].includes(rating)) {
       return NextResponse.json(
-        { error: "Geçersiz değerlendirme" },
+        { error: "Gecersiz degerlendirme" },
         { status: 400 }
       );
     }
 
-    // Kart sahiplik kontrolü
+    // Kart sahiplik kontrolu
     const card = await requireCardOwnership(cardId, user.id);
 
-    // SM-2 algoritmasıyla sonraki tekrarı hesapla
+    // Deck'in SRS ayarlarini al
+    const deck = await db.deck.findUnique({
+      where: { id: card.deckId },
+    });
+
+    const settings = parseDeckSettings(deck ?? {});
+
+    // SM-2 algoritmasi ile sonraki tekrari hesapla
     const result = calculateNextReview(
       {
         interval: card.interval,
         repetitions: card.repetitions,
         easeFactor: card.easeFactor,
         lapses: card.lapses,
+        learningStep: card.learningStep,
       },
-      rating
+      rating,
+      settings
     );
 
-    // Kartı ve review'ı güncelle (transaction)
-    const [updatedCard] = await db.$transaction([
-      db.card.update({
-        where: { id: cardId },
-        data: {
-          interval: result.interval,
-          repetitions: result.repetitions,
-          easeFactor: result.easeFactor,
-          dueDate: result.dueDate,
-          status: result.status,
-          lapses: result.lapses,
-        },
-      }),
-      db.review.create({
-        data: {
-          cardId,
-          quality: rating === "again" ? 0 : rating === "hard" ? 3 : rating === "good" ? 4 : 5,
-          interval: result.interval,
-          easeFactor: result.easeFactor,
-        },
-      }),
-    ]);
+    // Karti ve review'i guncelle
+    const updatedCard = await db.card.update({
+      where: { id: cardId },
+      data: {
+        interval: result.interval,
+        repetitions: result.repetitions,
+        easeFactor: result.easeFactor,
+        dueDate: result.dueDate,
+        status: result.status,
+        lapses: result.lapses,
+        learningStep: result.learningStep,
+      },
+    });
+
+    await db.review.create({
+      data: {
+        cardId,
+        quality: rating === "again" ? 0 : rating === "hard" ? 3 : rating === "good" ? 4 : 5,
+        interval: result.interval,
+        easeFactor: result.easeFactor,
+      },
+    });
 
     return NextResponse.json({
       card: updatedCard,
@@ -74,10 +84,10 @@ export async function POST(request: NextRequest) {
     });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
+      return NextResponse.json({ error: "Yetkisiz erisim" }, { status: 401 });
     }
     if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Kart bulunamadı" }, { status: 404 });
+      return NextResponse.json({ error: "Kart bulunamadi" }, { status: 404 });
     }
     console.error("Error recording review:", error);
     return NextResponse.json(
