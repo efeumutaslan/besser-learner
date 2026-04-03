@@ -22,13 +22,13 @@ export function getArtikelColor(artikel: string | null | undefined): string {
 export function getArtikelBgColor(artikel: string | null | undefined): string {
   switch (artikel?.toLowerCase()) {
     case "der":
-      return "bg-blue-50 border-blue-300 dark:bg-blue-950 dark:border-blue-700";
+      return "bg-blue-50 border-blue-300 dark:bg-blue-500/10 dark:border-blue-500/30";
     case "die":
-      return "bg-pink-50 border-pink-300 dark:bg-pink-950 dark:border-pink-700";
+      return "bg-pink-50 border-pink-300 dark:bg-pink-500/10 dark:border-pink-500/30";
     case "das":
-      return "bg-green-50 border-green-300 dark:bg-green-950 dark:border-green-700";
+      return "bg-green-50 border-green-300 dark:bg-green-500/10 dark:border-green-500/30";
     default:
-      return "bg-gray-50 border-gray-300 dark:bg-gray-700 dark:border-gray-600";
+      return "bg-gray-50 border-gray-300 dark:bg-gray-800 dark:border-gray-600";
   }
 }
 

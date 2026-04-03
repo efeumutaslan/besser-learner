@@ -412,7 +412,7 @@ export default function DeckDetailPage() {
                           {card.artikel}
                         </span>
                       )}
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">{card.word}</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{card.word}</span>
                       {card.plural && (
                         <span className="text-xs text-gray-500 dark:text-gray-400">
                           (Pl. {card.plural})
