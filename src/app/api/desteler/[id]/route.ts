@@ -31,15 +31,54 @@ export async function GET(
     }
 
     const now = new Date();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    // Bugün review edilen unique kart sayısı
+    const todayReviewedCards = await db.review.findMany({
+      where: {
+        card: { deckId: params.id },
+        reviewedAt: { gte: todayStart },
+      },
+      select: { cardId: true },
+      distinct: ["cardId"],
+    });
+    const todayReviewedCardIds = new Set(todayReviewedCards.map((r) => r.cardId));
+
+    // Bugün başlanan yeni kart sayısı
+    const todayNewStarted = await db.card.count({
+      where: {
+        deckId: params.id,
+        id: { in: Array.from(todayReviewedCardIds) },
+        status: { not: "NEW" },
+      },
+    });
+
+    const remainingNew = Math.max(0, deck.newPerDay - todayNewStarted);
+    const remainingReview = Math.max(0, deck.reviewPerDay - todayReviewedCards.length);
+
+    // Aktif öğrenimdeki kartlar (due olanlar)
+    const learningDueCount = deck.cards.filter(
+      (c) => (c.status === "LEARNING" || c.status === "RELEARN") && new Date(c.dueDate) <= now
+    ).length;
+
+    // Due olan review kartları (henüz bugün yapılmamış + limit dahilinde)
+    const reviewDueCards = deck.cards.filter(
+      (c) => c.status === "REVIEW" && new Date(c.dueDate) <= now && !todayReviewedCardIds.has(c.id)
+    );
+    const reviewDueCount = Math.min(reviewDueCards.length, remainingReview);
+
+    // Gösterilecek yeni kart sayısı (limit dahilinde)
+    const newCount = Math.min(
+      deck.cards.filter((c) => c.status === "NEW").length,
+      remainingNew
+    );
+
     const stats = {
       total: deck._count.cards,
-      new: deck.cards.filter((c) => c.status === "NEW").length,
-      learning: deck.cards.filter(
-        (c) => c.status === "LEARNING" || c.status === "RELEARN"
-      ).length,
-      review: deck.cards.filter(
-        (c) => c.status === "REVIEW" && new Date(c.dueDate) <= now
-      ).length,
+      new: newCount,
+      learning: learningDueCount,
+      review: reviewDueCount,
       mature: deck.cards.filter(
         (c) => c.status === "REVIEW" && c.interval >= 21
       ).length,

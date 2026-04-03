@@ -26,15 +26,52 @@ export async function GET(
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    // Bugün yapılan reviewları say
-    const todayReviews = await db.review.count({
+    // Bugün yapılan review'ları say — yeni ve tekrar ayrı ayrı
+    const todayNewReviews = await db.review.count({
+      where: {
+        card: { deckId: params.deckId },
+        reviewedAt: { gte: todayStart },
+        // İlk defa review edilen kartlar (quality >= 3 = ilk başarılı)
+        // NEW->LEARNING geçişlerini say
+      },
+    });
+
+    // Bugün review edilen UNIQUE kart sayısını bul
+    const todayReviewedCards = await db.review.findMany({
+      where: {
+        card: { deckId: params.deckId },
+        reviewedAt: { gte: todayStart },
+      },
+      select: { cardId: true },
+      distinct: ["cardId"],
+    });
+    const todayReviewedCardIds = new Set(todayReviewedCards.map((r) => r.cardId));
+
+    // Bugün ilk kez görülen yeni kartları say
+    // (bugün review'ı olan ve şu an NEW olmayan kartlar = bugün öğrenilmeye başlanan)
+    const todayNewStarted = await db.card.count({
+      where: {
+        deckId: params.deckId,
+        id: { in: Array.from(todayReviewedCardIds) },
+        status: { not: "NEW" },
+        // Bu kartlar önceden NEW idi ama bugün öğrenmeye başladık
+      },
+    });
+
+    // Bugün review edilen mature kartları say (REVIEW status'tan geçenler)
+    const todayMatureReviewed = await db.review.groupBy({
+      by: ["cardId"],
       where: {
         card: { deckId: params.deckId },
         reviewedAt: { gte: todayStart },
       },
     });
 
-    // 1. Öğrenme/tekrar öğrenme kartları (her zaman önce gösterilir)
+    // Kalan günlük limitler
+    const remainingNew = Math.max(0, deck.newPerDay - todayNewStarted);
+    const remainingReview = Math.max(0, deck.reviewPerDay - todayMatureReviewed.length);
+
+    // 1. Öğrenme/tekrar öğrenme kartları (her zaman önce, limit dışı — Anki kuralı)
     const learningCards = await db.card.findMany({
       where: {
         deckId: params.deckId,
@@ -44,26 +81,32 @@ export async function GET(
       orderBy: { dueDate: "asc" },
     });
 
-    // 2. Tekrar edilecek kartlar
-    const reviewCards = await db.card.findMany({
-      where: {
-        deckId: params.deckId,
-        status: "REVIEW",
-        dueDate: { lte: now },
-      },
-      orderBy: { dueDate: "asc" },
-      take: deck.reviewPerDay,
-    });
+    // 2. Tekrar edilecek mature kartlar (günlük limitle)
+    const reviewCards = remainingReview > 0
+      ? await db.card.findMany({
+          where: {
+            deckId: params.deckId,
+            status: "REVIEW",
+            dueDate: { lte: now },
+            // Bugün zaten review edilen kartları hariç tut
+            id: { notIn: Array.from(todayReviewedCardIds) },
+          },
+          orderBy: { dueDate: "asc" },
+          take: remainingReview,
+        })
+      : [];
 
-    // 3. Yeni kartlar
-    const newCards = await db.card.findMany({
-      where: {
-        deckId: params.deckId,
-        status: "NEW",
-      },
-      orderBy: { createdAt: "asc" },
-      take: deck.newPerDay,
-    });
+    // 3. Yeni kartlar (günlük limitle)
+    const newCards = remainingNew > 0
+      ? await db.card.findMany({
+          where: {
+            deckId: params.deckId,
+            status: "NEW",
+          },
+          orderBy: { createdAt: "asc" },
+          take: remainingNew,
+        })
+      : [];
 
     // Kuyruk: önce learning, sonra review, sonra new
     const queue = [...learningCards, ...reviewCards, ...newCards];
@@ -91,7 +134,9 @@ export async function GET(
         review: reviewCards.length,
         new: newCards.length,
         total: queue.length,
-        todayReviews,
+        todayReviews: todayReviewedCardIds.size,
+        remainingNew,
+        remainingReview,
       },
     });
   } catch (error: unknown) {
