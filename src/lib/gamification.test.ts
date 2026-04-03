@@ -4,6 +4,8 @@ import {
   calculateStreak,
   calculateSessionXP,
   getStreakBonus,
+  getLast7Days,
+  getDayName,
   XP_REWARDS,
   GEM_REWARDS,
   type MasteryLevel,
@@ -257,5 +259,65 @@ describe("getStreakBonus", () => {
   it("should return STREAK_30 for 30+", () => {
     expect(getStreakBonus(30)).toBe(XP_REWARDS.STREAK_30);
     expect(getStreakBonus(100)).toBe(XP_REWARDS.STREAK_30);
+  });
+});
+
+// --- getLast7Days ---
+
+describe("getLast7Days", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-04-01T12:00:00"));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("should return 7 dates", () => {
+    const days = getLast7Days();
+    expect(days).toHaveLength(7);
+  });
+
+  it("should end with today", () => {
+    const days = getLast7Days();
+    expect(days[6]).toBe("2026-04-01");
+  });
+
+  it("should start 6 days ago", () => {
+    const days = getLast7Days();
+    expect(days[0]).toBe("2026-03-26");
+  });
+
+  it("should be in ascending order", () => {
+    const days = getLast7Days();
+    for (let i = 1; i < days.length; i++) {
+      expect(days[i] > days[i - 1]).toBe(true);
+    }
+  });
+
+  it("should pad month and day with zeros", () => {
+    vi.setSystemTime(new Date("2026-01-05T12:00:00"));
+    const days = getLast7Days();
+    expect(days[6]).toBe("2026-01-05");
+    // Dec 30 should be zero-padded
+    expect(days[0]).toBe("2025-12-30");
+  });
+});
+
+// --- getDayName ---
+
+describe("getDayName", () => {
+  it("should return short Turkish day name", () => {
+    const name = getDayName("2026-04-01"); // Wednesday
+    expect(typeof name).toBe("string");
+    expect(name.length).toBeGreaterThan(0);
+    expect(name.length).toBeLessThanOrEqual(5); // short format
+  });
+
+  it("should return different names for different days", () => {
+    const mon = getDayName("2026-03-30"); // Monday
+    const tue = getDayName("2026-03-31"); // Tuesday
+    expect(mon).not.toBe(tue);
   });
 });

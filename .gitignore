@@ -44,3 +44,7 @@ next-env.d.ts
 
 # prisma
 /prisma/*.db
+
+# Playwright
+test-results/
+playwright-report/
