@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth, requireDeckOwnership } from "@/lib/auth";
+import { searchImage } from "@/lib/image-search";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST - Yeni kart oluştur
@@ -32,6 +33,12 @@ export async function POST(request: NextRequest) {
     // Deste sahiplik kontrolü
     await requireDeckOwnership(deckId, user.id);
 
+    // imageUrl yoksa Pixabay'dan otomatik çek
+    let resolvedImageUrl = imageUrl || null;
+    if (!resolvedImageUrl) {
+      resolvedImageUrl = await searchImage(word.trim());
+    }
+
     const card = await db.card.create({
       data: {
         deckId,
@@ -45,7 +52,7 @@ export async function POST(request: NextRequest) {
         exampleSentence: exampleSentence?.trim() || null,
         sentenceTranslation: sentenceTranslation?.trim() || null,
         notes: notes?.trim() || null,
-        imageUrl: imageUrl || null,
+        imageUrl: resolvedImageUrl,
       },
     });
 

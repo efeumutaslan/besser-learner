@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { searchImagesForWords } from "@/lib/image-search";
 import { NextRequest, NextResponse } from "next/server";
 
 const MARKET_REPO = "efeumutaslan/besserlernen-decks";
@@ -71,6 +72,13 @@ export async function POST(request: NextRequest) {
       ? `${deckData.name} (Market)`
       : deckData.name;
 
+    // Kartlar için otomatik resim çek (arka planda, bloklamaz)
+    const validCards = deckData.cards.filter(
+      (c) => c.word?.trim() && c.wordTranslation?.trim()
+    );
+    const words = validCards.map((c) => c.word.trim());
+    const imageMap = await searchImagesForWords(words);
+
     // Deste + kartlari olustur
     const deck = await db.$transaction(async (tx) => {
       const newDeck = await tx.deck.create({
@@ -83,9 +91,7 @@ export async function POST(request: NextRequest) {
       });
 
       await tx.card.createMany({
-        data: deckData.cards
-          .filter((c) => c.word?.trim() && c.wordTranslation?.trim())
-          .map((card) => ({
+        data: validCards.map((card) => ({
             deckId: newDeck.id,
             word: card.word.trim(),
             wordTranslation: card.wordTranslation.trim(),
@@ -94,6 +100,7 @@ export async function POST(request: NextRequest) {
             exampleSentence: card.exampleSentence?.trim() || null,
             sentenceTranslation: card.sentenceTranslation?.trim() || null,
             notes: card.notes?.trim() || null,
+            imageUrl: imageMap.get(card.word.trim()) || null,
           })),
       });
 
