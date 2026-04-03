@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { cn, getArtikelBadgeColor, getArtikelColor } from "@/lib/utils";
 import { getEstimatedIntervals, type AnkiRating } from "@/lib/srs";
 import { parseDeckSettings } from "@/lib/srs-settings";
@@ -63,7 +63,9 @@ interface StudyData {
 export default function StudyPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const deckId = params.id as string;
+  const directionPref = (searchParams.get("direction") || "de_to_tr") as "de_to_tr" | "tr_to_de" | "mixed";
 
   const [data, setData] = useState<StudyData | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -178,6 +180,15 @@ export default function StudyPage() {
 
   if (!currentCard || !data) return null;
 
+  // Kart yönü: ön yüz ve arka yüz belirleme
+  const cardIsDeToTr = directionPref === "de_to_tr" ? true
+    : directionPref === "tr_to_de" ? false
+    : currentIndex % 2 === 0; // mixed: alternating
+  const frontText = cardIsDeToTr ? currentCard.word : currentCard.wordTranslation;
+  const backText = cardIsDeToTr ? currentCard.wordTranslation : currentCard.word;
+  const showArtikel = cardIsDeToTr && currentCard.artikel && currentCard.artikel !== "-";
+  const showPlural = cardIsDeToTr && currentCard.plural;
+
   const progress = data.queue.length > 0
     ? ((currentIndex) / data.queue.length) * 100
     : 0;
@@ -224,9 +235,18 @@ export default function StudyPage() {
       {/* Kart */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md">
-          {/* Ön yüz - Almanca */}
+          {/* Ön yüz */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 text-center mb-6">
-            {currentCard.artikel && currentCard.artikel !== "-" && (
+            {currentCard.imageUrl && (
+              <div className="mb-4">
+                <img
+                  src={currentCard.imageUrl}
+                  alt={currentCard.word}
+                  className="w-32 h-32 object-cover rounded-2xl mx-auto"
+                />
+              </div>
+            )}
+            {showArtikel && (
               <span
                 className={cn(
                   "inline-block px-3 py-1 rounded-full text-sm font-bold mb-3",
@@ -239,12 +259,12 @@ export default function StudyPage() {
             <h2
               className={cn(
                 "text-3xl font-bold mb-2",
-                getArtikelColor(currentCard.artikel)
+                cardIsDeToTr ? getArtikelColor(currentCard.artikel) : ""
               )}
             >
-              {currentCard.word}
+              {frontText}
             </h2>
-            {currentCard.plural && (
+            {showPlural && (
               <p className="text-gray-400 dark:text-gray-500 text-sm">
                 Çoğul: {currentCard.plural}
               </p>
@@ -276,8 +296,19 @@ export default function StudyPage() {
           {showAnswer ? (
             <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="text-center">
-                <p className="text-xl font-bold text-gray-800 dark:text-gray-100">
-                  {currentCard.wordTranslation}
+                <p className={cn(
+                  "text-xl font-bold text-gray-800 dark:text-gray-100",
+                  !cardIsDeToTr ? getArtikelColor(currentCard.artikel) : ""
+                )}>
+                  {!cardIsDeToTr && currentCard.artikel && currentCard.artikel !== "-" && (
+                    <span className={cn(
+                      "inline-block px-2 py-0.5 rounded-full text-xs font-bold mr-2 align-middle",
+                      getArtikelBadgeColor(currentCard.artikel)
+                    )}>
+                      {currentCard.artikel}
+                    </span>
+                  )}
+                  {backText}
                 </p>
               </div>
 

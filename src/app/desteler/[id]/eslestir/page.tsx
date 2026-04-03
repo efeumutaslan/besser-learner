@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { cn, shuffle } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import LessonComplete from "@/components/LessonComplete";
@@ -24,7 +24,9 @@ interface MatchItem {
 export default function MatchPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const deckId = params.id as string;
+  const directionPref = (searchParams.get("direction") || "mixed") as "de_to_tr" | "tr_to_de" | "mixed";
 
   const [cards, setCards] = useState<Card[]>([]);
   const [leftItems, setLeftItems] = useState<MatchItem[]>([]);
@@ -50,10 +52,13 @@ export default function MatchPage() {
         Math.min(6, allCards.length)
       );
 
+      // Yön: tr_to_de ise sol=Türkçe, sağ=Almanca; aksi halde sol=Almanca, sağ=Türkçe
+      const isReversed = directionPref === "tr_to_de";
+
       const left: MatchItem[] = shuffle(
         gameCards.map((c) => ({
           id: `l-${c.id}`,
-          text: c.word,
+          text: isReversed ? c.wordTranslation : c.word,
           cardId: c.id,
           matched: false,
         }))
@@ -62,7 +67,7 @@ export default function MatchPage() {
       const right: MatchItem[] = shuffle(
         gameCards.map((c) => ({
           id: `r-${c.id}`,
-          text: c.wordTranslation,
+          text: isReversed ? c.word : c.wordTranslation,
           cardId: c.id,
           matched: false,
         }))
@@ -84,7 +89,7 @@ export default function MatchPage() {
         setTimer((prev) => prev + 1);
       }, 100); // 100ms hassasiyet
     },
-    []
+    [directionPref]
   );
 
   useEffect(() => {

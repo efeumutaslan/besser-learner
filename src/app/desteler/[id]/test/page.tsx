@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   cn,
   getArtikelBadgeColor,
@@ -59,7 +59,9 @@ const DEFAULT_CONFIG: TestConfig = {
 export default function TestPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const deckId = params.id as string;
+  const directionPref = (searchParams.get("direction") || "mixed") as "de_to_tr" | "tr_to_de" | "mixed";
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [cards, setCards] = useState<Card[]>([]);
@@ -126,18 +128,21 @@ export default function TestPage() {
 
         switch (format) {
           case "multipleChoice": {
-            const direction = Math.random() > 0.5;
+            // Yön: true = DE→TR, false = TR→DE
+            const isDeToTr = directionPref === "de_to_tr" ? true
+              : directionPref === "tr_to_de" ? false
+              : Math.random() > 0.5;
             const wrongOpts = shuffle(wrongCards)
               .slice(0, 3)
-              .map((c) => (direction ? c.wordTranslation : c.word));
+              .map((c) => (isDeToTr ? c.wordTranslation : c.word));
 
             qs.push({
               card,
               format: "multipleChoice",
-              question: direction ? card.word : card.wordTranslation,
-              correctAnswer: direction ? card.wordTranslation : card.word,
+              question: isDeToTr ? card.word : card.wordTranslation,
+              correctAnswer: isDeToTr ? card.wordTranslation : card.word,
               options: shuffle([
-                direction ? card.wordTranslation : card.word,
+                isDeToTr ? card.wordTranslation : card.word,
                 ...wrongOpts,
               ]),
             });
@@ -145,14 +150,16 @@ export default function TestPage() {
           }
 
           case "written": {
-            const direction = Math.random() > 0.5;
+            const isDeToTr = directionPref === "de_to_tr" ? true
+              : directionPref === "tr_to_de" ? false
+              : Math.random() > 0.5;
             qs.push({
               card,
               format: "written",
-              question: direction
+              question: isDeToTr
                 ? `"${card.word}" kelimesinin Türkçesi nedir?`
                 : `"${card.wordTranslation}" kelimesinin Almancası nedir?`,
-              correctAnswer: direction
+              correctAnswer: isDeToTr
                 ? card.wordTranslation.toLowerCase().trim()
                 : card.word.toLowerCase().trim(),
             });
@@ -189,7 +196,7 @@ export default function TestPage() {
 
       return shuffle(qs);
     },
-    [cards]
+    [cards, directionPref]
   );
 
   const startTest = () => {

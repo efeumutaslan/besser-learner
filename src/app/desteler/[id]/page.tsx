@@ -20,8 +20,12 @@ import {
   Pencil,
   Trash2,
   Settings,
-  MoreVertical,
+  Type,
+  PenLine,
+  GraduationCap,
 } from "lucide-react";
+
+type StudyDirection = "de_to_tr" | "tr_to_de" | "mixed";
 
 interface Card {
   id: string;
@@ -84,6 +88,7 @@ export default function DeckDetailPage() {
   const [isShuffled, setIsShuffled] = useState(false);
   const [shuffledCards, setShuffledCards] = useState<Card[]>([]);
   const [pendingNav, setPendingNav] = useState<string | null>(null);
+  const [direction, setDirection] = useState<StudyDirection>("mixed");
   const [savingSettings, setSavingSettings] = useState(false);
   const [srsForm, setSrsForm] = useState({
     newPerDay: 20,
@@ -220,11 +225,13 @@ export default function DeckDetailPage() {
 
   const dueCount = deck.stats.learning + deck.stats.review;
 
+  const withDirection = (path: string) => `${path}?direction=${direction}`;
+
   const handleFunModeClick = (path: string) => {
     if (dueCount > 0) {
       setPendingNav(path);
     } else {
-      router.push(path);
+      router.push(withDirection(path));
     }
   };
 
@@ -285,6 +292,33 @@ export default function DeckDetailPage() {
         </div>
       </div>
 
+      {/* Yön seçici */}
+      <div className="px-4 pt-4">
+        <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">
+          ÇALIŞMA YÖNÜ
+        </h3>
+        <div className="flex gap-2">
+          {([
+            { key: "de_to_tr" as StudyDirection, label: "DE → TR", desc: "Almanca → Türkçe" },
+            { key: "tr_to_de" as StudyDirection, label: "TR → DE", desc: "Türkçe → Almanca" },
+            { key: "mixed" as StudyDirection, label: "Karışık", desc: "Her iki yön" },
+          ]).map(({ key, label }) => (
+            <button
+              key={key}
+              onClick={() => setDirection(key)}
+              className={cn(
+                "flex-1 py-2 px-3 rounded-xl border-2 text-sm font-semibold transition-all text-center",
+                direction === key
+                  ? "border-brand-500 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300"
+                  : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400"
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Çalışma modları */}
       <div className="p-4">
         <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">
@@ -292,7 +326,7 @@ export default function DeckDetailPage() {
         </h3>
         <div className="grid grid-cols-2 gap-3">
           <Link
-            href={`/desteler/${deckId}/calis`}
+            href={withDirection(`/desteler/${deckId}/calis`)}
             className={cn(
               "flex items-center gap-3 p-4 rounded-2xl border-2 transition-all",
               dueCount > 0
@@ -340,12 +374,42 @@ export default function DeckDetailPage() {
           </button>
           <button
             onClick={() => handleFunModeClick(`/desteler/${deckId}/blast`)}
-            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all text-left col-span-2"
+            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-yellow-300 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 transition-all text-left"
           >
             <Zap className="w-6 h-6 text-yellow-600" />
             <div>
               <div className="font-semibold text-sm">Blast</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">Asteroid oyunu - hızlı tepki</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Hızlı tepki</div>
+            </div>
+          </button>
+          <button
+            onClick={() => handleFunModeClick(`/desteler/${deckId}/artikel`)}
+            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all text-left"
+          >
+            <Type className="w-6 h-6 text-indigo-600" />
+            <div>
+              <div className="font-semibold text-sm">Artikel</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">der/die/das quiz</div>
+            </div>
+          </button>
+          <button
+            onClick={() => handleFunModeClick(`/desteler/${deckId}/bosluk`)}
+            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/20 transition-all text-left col-span-2"
+          >
+            <PenLine className="w-6 h-6 text-teal-600" />
+            <div>
+              <div className="font-semibold text-sm">Cümle Tamamla</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Boşluk doldurma</div>
+            </div>
+          </button>
+          <button
+            onClick={() => handleFunModeClick(`/desteler/${deckId}/gramer`)}
+            className="flex items-center gap-3 p-4 rounded-2xl border-2 border-gray-200 dark:border-gray-700 hover:border-violet-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 transition-all text-left col-span-2"
+          >
+            <GraduationCap className="w-6 h-6 text-violet-600" />
+            <div>
+              <div className="font-semibold text-sm">Gramer</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Akkusativ / Dativ drill</div>
             </div>
           </button>
         </div>
@@ -400,6 +464,13 @@ export default function DeckDetailPage() {
                 )}
               >
                 <div className="flex items-start justify-between">
+                  {card.imageUrl && (
+                    <img
+                      src={card.imageUrl}
+                      alt={card.word}
+                      className="w-10 h-10 rounded-lg object-cover mr-3 flex-shrink-0"
+                    />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       {card.artikel && card.artikel !== "-" && (
@@ -684,7 +755,7 @@ export default function DeckDetailPage() {
             onClick={() => {
               const nav = pendingNav;
               setPendingNav(null);
-              if (nav) router.push(nav);
+              if (nav) router.push(withDirection(nav));
             }}
             className="flex-1"
           >
@@ -693,7 +764,7 @@ export default function DeckDetailPage() {
           <Button
             onClick={() => {
               setPendingNav(null);
-              router.push(`/desteler/${deckId}/calis`);
+              router.push(withDirection(`/desteler/${deckId}/calis`));
             }}
             className="flex-1"
           >

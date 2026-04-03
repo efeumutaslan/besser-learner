@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { cn, shuffle } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import LessonComplete from "@/components/LessonComplete";
@@ -37,7 +37,9 @@ const SPEED_MAP = { slow: 0.3, normal: 0.6, fast: 1.0 };
 export default function BlastPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const deckId = params.id as string;
+  const directionPref = (searchParams.get("direction") || "mixed") as "de_to_tr" | "tr_to_de" | "mixed";
 
   const [cards, setCards] = useState<Card[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,6 +66,7 @@ export default function BlastPage() {
   });
   const [flashColor, setFlashColor] = useState<"green" | "red" | null>(null);
   const [combo, setCombo] = useState(0);
+  const [roundIsDeToTr, setRoundIsDeToTr] = useState(true);
 
   const gameRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -94,6 +97,13 @@ export default function BlastPage() {
   const spawnNewRound = useCallback(() => {
     if (cards.length < 3) return;
 
+    // Yön: her round için belirle
+    const isDeToTr = directionPref === "de_to_tr" ? true
+      : directionPref === "tr_to_de" ? false
+      : Math.random() > 0.5;
+
+    setRoundIsDeToTr(isDeToTr);
+
     const correctCard = cards[Math.floor(Math.random() * cards.length)];
     setPrompt(correctCard);
 
@@ -112,7 +122,7 @@ export default function BlastPage() {
 
       return {
         id: `${card.id}-${Date.now()}-${i}`,
-        text: card.wordTranslation,
+        text: isDeToTr ? card.wordTranslation : card.word,
         cardId: card.id,
         isCorrect: card.id === correctCard.id,
         x: centerX + radius * Math.cos((angle * Math.PI) / 180) * 0.3,
@@ -123,7 +133,7 @@ export default function BlastPage() {
     });
 
     setAsteroids(newAsteroids);
-  }, [cards, config.choices, config.speed]);
+  }, [cards, config.choices, config.speed, directionPref]);
 
   const startGame = useCallback(() => {
     setShowConfig(false);
@@ -414,7 +424,9 @@ export default function BlastPage() {
           >
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20">
               <p className="text-white/60 text-xs mb-1">Bu kelimenin çevirisi?</p>
-              <h2 className="text-2xl font-bold text-white">{prompt.word}</h2>
+              <h2 className="text-2xl font-bold text-white">
+                {roundIsDeToTr ? prompt.word : prompt.wordTranslation}
+              </h2>
             </div>
           </motion.div>
         </div>

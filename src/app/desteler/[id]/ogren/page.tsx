@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   cn,
   getArtikelColor,
@@ -30,6 +30,7 @@ interface Card {
   plural: string | null;
   exampleSentence: string | null;
   sentenceTranslation: string | null;
+  imageUrl: string | null;
   mastery: string;
   correctHits: number;
 }
@@ -60,7 +61,9 @@ const CHUNK_SIZE = 20; // Her round'da maks kart sayısı
 export default function LearnPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const deckId = params.id as string;
+  const directionPref = (searchParams.get("direction") || "mixed") as "de_to_tr" | "tr_to_de" | "mixed";
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [allCards, setAllCards] = useState<Card[]>([]);
@@ -128,15 +131,23 @@ export default function LearnPage() {
         const progress = progressMap.get(card.id);
         const qType = getQuestionType(card, progress);
 
-        // Yön seçimi
-        const directions: Array<"de_to_tr" | "tr_to_de" | "artikel"> = [
-          "de_to_tr",
-          "tr_to_de",
-        ];
-        if (card.artikel && card.artikel !== "-") {
-          directions.push("artikel");
+        // Yön seçimi — kullanıcı tercihine göre
+        let direction: "de_to_tr" | "tr_to_de" | "artikel";
+        if (directionPref === "de_to_tr") {
+          direction = "de_to_tr";
+        } else if (directionPref === "tr_to_de") {
+          direction = "tr_to_de";
+        } else {
+          // mixed: rastgele seç
+          const directions: Array<"de_to_tr" | "tr_to_de" | "artikel"> = [
+            "de_to_tr",
+            "tr_to_de",
+          ];
+          if (card.artikel && card.artikel !== "-") {
+            directions.push("artikel");
+          }
+          direction = directions[Math.floor(Math.random() * directions.length)];
         }
-        const direction = directions[Math.floor(Math.random() * directions.length)];
 
         const wrongCards = allCardsPool.filter((c) => c.id !== card.id);
 
@@ -248,7 +259,7 @@ export default function LearnPage() {
 
       return shuffle(qs);
     },
-    [getQuestionType]
+    [getQuestionType, directionPref]
   );
 
   // Veri yükleme
@@ -584,6 +595,15 @@ export default function LearnPage() {
           {currentQuestion.type === "multipleChoice" && (
             <>
               <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 text-center mb-6">
+                {currentQuestion.card.imageUrl && (
+                  <div className="mb-3">
+                    <img
+                      src={currentQuestion.card.imageUrl}
+                      alt={currentQuestion.card.word}
+                      className="w-20 h-20 object-cover rounded-xl mx-auto"
+                    />
+                  </div>
+                )}
                 {currentQuestion.direction === "de_to_tr" &&
                   currentQuestion.card.artikel &&
                   currentQuestion.card.artikel !== "-" && (
@@ -844,6 +864,15 @@ export default function LearnPage() {
                 >
                   {!flipped ? (
                     <div>
+                      {currentQuestion.card.imageUrl && (
+                        <div className="mb-3">
+                          <img
+                            src={currentQuestion.card.imageUrl}
+                            alt={currentQuestion.card.word}
+                            className="w-24 h-24 object-cover rounded-xl mx-auto"
+                          />
+                        </div>
+                      )}
                       {currentQuestion.card.artikel &&
                         currentQuestion.card.artikel !== "-" && (
                           <span

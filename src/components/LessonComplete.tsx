@@ -20,7 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 interface LessonCompleteProps {
   deckId: string;
-  type: "review" | "learn" | "test" | "match" | "blast";
+  type: "review" | "learn" | "test" | "match" | "blast" | "artikel" | "cloze" | "grammar";
   cardsStudied: number;
   correctCount: number;
   wrongCount: number;
@@ -101,6 +101,9 @@ export default function LessonComplete({
     test: "Test",
     match: "Eşleştirme",
     blast: "Blast",
+    artikel: "Artikel Drill",
+    cloze: "Cümle Tamamlama",
+    grammar: "Gramer Drill",
   };
 
   return (
