@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useToast } from "@/context/ToastContext";
 import BottomNav from "@/components/BottomNav";
 import DeckCard, { NewDeckCard } from "@/components/DeckCard";
 import Modal from "@/components/ui/Modal";
@@ -58,31 +59,31 @@ export default function HomePage() {
   const [creating, setCreating] = useState(false);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [recentActivity, setRecentActivity] = useState<DailyActivity[]>([]);
+  const { toast } = useToast();
 
   const fetchDecks = useCallback(async () => {
     try {
       const data = await cachedFetch<Deck[]>("/api/desteler");
       setDecks(data);
-    } catch (err) {
-      console.error("Desteler yüklenemedi:", err);
+    } catch {
+      toast("Desteler yuklenemedi", "error");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   const fetchStats = useCallback(async () => {
     try {
       const data = await cachedFetch<{ stats: UserStats; recentActivity: DailyActivity[] }>("/api/stats");
       setUserStats(data.stats);
       setRecentActivity(data.recentActivity || []);
-    } catch (err) {
-      console.error("Stats yüklenemedi:", err);
+    } catch {
+      // Stats yuklenmezse sessizce devam et
     }
   }, []);
 
   useEffect(() => {
-    fetchDecks();
-    fetchStats();
+    Promise.all([fetchDecks(), fetchStats()]);
   }, [fetchDecks, fetchStats]);
 
   const handleCreateDeck = async () => {
@@ -106,8 +107,8 @@ export default function HomePage() {
         invalidateCache("/api/desteler");
         fetchDecks();
       }
-    } catch (err) {
-      console.error("Deste oluşturulamadı:", err);
+    } catch {
+      toast("Deste olusturulamadi", "error");
     } finally {
       setCreating(false);
     }

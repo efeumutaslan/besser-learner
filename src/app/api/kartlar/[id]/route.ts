@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth, requireCardOwnership } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET - Tek kart detayı
@@ -18,17 +19,7 @@ export async function GET(
 
     return NextResponse.json(card);
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Kart bulunamadı" }, { status: 404 });
-    }
-    console.error("Error fetching card:", error);
-    return NextResponse.json(
-      { error: "Kart yüklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Kart yuklenemedi");
   }
 }
 
@@ -84,17 +75,7 @@ export async function PUT(
 
     return NextResponse.json(card);
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Kart bulunamadı" }, { status: 404 });
-    }
-    console.error("Error updating card:", error);
-    return NextResponse.json(
-      { error: "Kart güncellenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Kart guncellenemedi");
   }
 }
 
@@ -110,16 +91,6 @@ export async function DELETE(
     await db.card.delete({ where: { id: params.id } });
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Kart bulunamadı" }, { status: 404 });
-    }
-    console.error("Error deleting card:", error);
-    return NextResponse.json(
-      { error: "Kart silinemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Kart silinemedi");
   }
 }

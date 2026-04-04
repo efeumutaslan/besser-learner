@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { searchImagesForWords } from "@/lib/image-search";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -116,13 +117,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erisim" }, { status: 401 });
-    }
-    console.error("Market install error:", error);
-    return NextResponse.json(
-      { error: "Deste yuklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Deste yuklenemedi");
   }
 }

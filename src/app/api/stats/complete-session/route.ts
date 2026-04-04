@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth, requireDeckOwnership } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import {
   calculateSessionXP,
   calculateStreak,
@@ -144,16 +145,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Deste bulunamadı" }, { status: 404 });
-    }
-    console.error("Error completing session:", error);
-    return NextResponse.json(
-      { error: "Oturum kaydedilemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Oturum kaydedilemedi");
   }
 }

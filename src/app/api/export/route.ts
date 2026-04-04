@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { NextResponse } from "next/server";
 
 // GET - Kullanıcının tüm verilerini JSON olarak dışa aktar
@@ -55,13 +56,6 @@ export async function GET() {
       },
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Export error:", error);
-    return NextResponse.json(
-      { error: "Dışa aktarma başarısız" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Disa aktarma basarisiz");
   }
 }

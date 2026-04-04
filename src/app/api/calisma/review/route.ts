@@ -2,6 +2,7 @@ import { db } from "@/lib/db";
 import { requireAuth, requireCardOwnership } from "@/lib/auth";
 import { calculateNextReview, type AnkiRating } from "@/lib/srs";
 import { parseDeckSettings } from "@/lib/srs-settings";
+import { handleApiError } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST - Kart tekrarini kaydet
@@ -83,16 +84,6 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erisim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Kart bulunamadi" }, { status: 404 });
-    }
-    console.error("Error recording review:", error);
-    return NextResponse.json(
-      { error: "Tekrar kaydedilemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Tekrar kaydedilemedi");
   }
 }

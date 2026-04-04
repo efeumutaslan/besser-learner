@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth, requireDeckOwnership } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { searchImage } from "@/lib/image-search";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -51,19 +52,6 @@ export async function POST(
       skipped: cardsWithoutImage.length - updated,
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    if (
-      error instanceof Error &&
-      (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")
-    ) {
-      return NextResponse.json({ error: "Deste bulunamadı" }, { status: 404 });
-    }
-    console.error("Fetch images error:", error);
-    return NextResponse.json(
-      { error: "Resimler yüklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Resimler yuklenemedi");
   }
 }

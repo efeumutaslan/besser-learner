@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth, verifyPassword, hashPassword } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // PUT - Şifre değiştir
@@ -53,13 +54,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Password change error:", error);
-    return NextResponse.json(
-      { error: "Şifre değiştirilemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Sifre degistirilemedi");
   }
 }

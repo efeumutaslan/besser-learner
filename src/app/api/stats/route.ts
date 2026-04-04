@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { NextResponse } from "next/server";
 
 // GET - Kullanıcı istatistiklerini getir
@@ -33,13 +34,6 @@ export async function GET() {
 
     return NextResponse.json({ stats, recentActivity });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Error fetching stats:", error);
-    return NextResponse.json(
-      { error: "İstatistikler yüklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Istatistikler yuklenemedi");
   }
 }

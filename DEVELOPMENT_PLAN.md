@@ -1,191 +1,84 @@
 # BesserLernen - Gelistirme Plani
 
-## Mevcut Durum Analizi
+## Faz 1: Performans Optimizasyonu
+**Hedef:** Buyuk destelerde (500+ kart) akici deneyim
 
-### Tespit Edilen Kritik Sorunlar
-
-1. **Iki bagimsiz ilerleme sistemi birbirinden habersiz:**
-   - SRS sistemi (status/interval/dueDate/easeFactor) → sadece `calis` (Anki tekrar) modunda kullaniliyor
-   - Mastery sistemi (NEW/SEEN/FAMILIAR/MASTERED, correctHits) → sadece `ogren` modunda kullaniliyor
-   - Birbirine hic etki etmiyor
-
-2. **Fun modlar tum kartlari cekiyor:**
-   - Ogren, Test, Eslestir, Blast hepsi `GET /api/desteler/${id}` ile TUM kartlari cekiyor
-   - 900 kartlik destede ogrenilmemis kelimeler de rastgele geliyor
-   - Hicbir filtreleme yok (SRS status, mastery, dueDate hicbiri kontrol edilmiyor)
-
-3. **SRS algoritmasi tamamen hardcoded:**
-   - Tekrar ogrenim: sadece 10dk (cok adimli ogrenme yok)
-   - Mezuniyet araligi: 1 gun (sabit)
-   - Kolay bonusu: 1.3x (sabit)
-   - Zor carpani: 0.8x (sabit)
-   - Max aralik, fuzz, FSRS hicbiri yok
+| # | Gorev | Dosyalar | Oncelik |
+|---|-------|----------|---------|
+| 1.1 | **React.memo ile kart listesi optimizasyonu** — Kart bileseni memo'lanarak her state degisiminde tum listenin yeniden renderlanmasi onlenir | `desteler/[id]/page.tsx` | Yuksek |
+| 1.2 | **useCallback/useMemo yaygınlastirma** — Handler fonksiyonlari ve turetilmis degerler memoize edilir. Ozellikle calisma modlarinda (10+ useState olan sayfalar) | Tum calisma modlari | Yuksek |
+| 1.3 | **Ana sayfa paralel fetch** — Deste listesi ve istatistikler `Promise.all` ile ayni anda cekilir | `src/app/page.tsx` | Orta |
+| 1.4 | **Eslestir timer optimizasyonu** — `setInterval(100ms)` yerine `requestAnimationFrame` kullanilir, CPU yuku azalir | `desteler/[id]/eslestir/page.tsx` | Orta |
+| 1.5 | **Kart listesi virtualization** — 500+ kartli destelerde sadece gorunen kartlar renderlanir (react-window veya benzeri) | `desteler/[id]/page.tsx` | Dusuk |
 
 ---
 
-## Faz 1: Akilli Kart Havuzu + SRS Geri Bildirimi (Backend)
+## Faz 2: Kod Kalitesi & DRY Refaktoru
+**Hedef:** Tekrarlanan mantigi merkezilestirip bakim kolayligi saglamak
 
-### 1.1 Smart Pool API Endpoint
-**Yeni dosya:** `src/app/api/desteler/[id]/smart-pool/route.ts`
-
-- `GET /api/desteler/{id}/smart-pool?mode=learn|test|match|blast&limit=N`
-- Oncelik sirasi:
-  1. LEARNING/RELEARN kartlar (dueDate <= now) — aktif ogrenilen kartlar
-  2. REVIEW kartlar (dueDate <= now) — tekrari gelen kartlar
-  3. Calisilmis kartlar (mastery: SEEN, FAMILIAR) — ogreniyor ama henuz ustalasmamis
-  4. Yeni kartlar (gunluk limit kadar) — henuz hic gorulmemis
-- Response'ta `dueCount` alani (uyari banner'i icin)
-
-### 1.2 SRS Feedback Endpoint
-**Yeni dosya:** `src/app/api/kartlar/[id]/feedback/route.ts`
-
-- `POST /api/kartlar/{id}/feedback` — `{ isCorrect: boolean, source: "learn"|"test"|"match"|"blast" }`
-- Mantik:
-  - NEW + dogru → status=LEARNING, dueDate=+10dk (karti SRS'e tanitir)
-  - NEW + yanlis → mastery=SEEN (SRS'e henuz almaz)
-  - LEARNING/REVIEW + dogru → soft "good" rating (calculateNextReview)
-  - LEARNING/REVIEW + yanlis → soft "again" rating
-- Dedup: Ayni gun ayni kart icin SRS degisikligi sadece 1 kez uygulanir
-- Mastery + correctHits her zaman guncellenir
-
-### 1.3 Deck Listesi API Guncelleme
-**Degisiklik:** `src/app/api/desteler/route.ts`
-
-- Mevcut dueCount hesabina LEARNING/RELEARN kartlari da dahil et
+| # | Gorev | Dosyalar | Oncelik |
+|---|-------|----------|---------|
+| 2.1 | **Deste istatistik hesabini tek utility'ye cikart** — 3 ayri route'ta (desteler, desteler/[id], calisma/[deckId]) tekrarlanan new/learning/review hesabi `src/lib/deck-stats.ts` altinda birlestir | 3 route + yeni utility | Yuksek |
+| 2.2 | **API hata yonetimi utility'si** — 15+ route'ta tekrarlanan `if (error.message === "UNAUTHORIZED")` blogu tek `handleApiError(error)` fonksiyonuna donusturulur | Tum API route'lari + yeni utility | Yuksek |
+| 2.3 | **Toast bildirim sistemi** — Basari/hata/uyari toast component'i olusturulur, `console.error` ile yutulan hatalar kullaniciya gosterilir | Yeni `src/components/ui/Toast.tsx` + context | Orta |
+| 2.4 | **Error boundary'ler** — Her ana route'a `error.tsx` eklenir, crash durumunda kullaniciya anlamli mesaj ve "Tekrar Dene" butonu gosterilir | Her route klasoru | Orta |
 
 ---
 
-## Faz 2: Fun Modlari Akilli Havuza Bagla (Frontend)
+## Faz 3: UX Cilalamasi
+**Hedef:** Profesyonel his veren, kullanici dostu arayuz
 
-### 2.1 Tum modlarda ortak degisiklikler
-- `GET /api/desteler/${id}` → `GET /api/desteler/${id}/smart-pool?mode=X`
-- Her soru tipine **"Bilmiyorum / Atla"** butonu
-- Dogru/yanlis sonrasi `POST /api/kartlar/{id}/feedback` cagrisi
-- **Artikel zorunlulugu**: TR→DE yonunde artikel varsa "der/die/das + Wort" beklenir
-  - Yanlis artikel → kismi puan, dogru artikel goster
-  - Artikel olmayan kelimeler (fiil, sifat) icin bu kural gecersiz
-
-### 2.2 Mod-bazli degisiklikler
-
-| Mod | Dosya | Degisiklik |
-|-----|-------|-----------|
-| Ogren | `desteler/[id]/ogren/page.tsx` | Smart pool + feedback + artikel + atla butonu |
-| Test | `desteler/[id]/test/page.tsx` | Smart pool + feedback + artikel + atla butonu |
-| Eslestir | `desteler/[id]/eslestir/page.tsx` | Smart pool + zorluk secici (4/6/8 cift) |
-| Blast | `desteler/[id]/blast/page.tsx` | Smart pool + feedback |
-
-### 2.3 Ana Sayfa + Deste Sayfasi
-- **Ana sayfa** (`page.tsx`): "Bugun **X tekrar** kartin var!" vurgulu gosterim, pulsing indicator
-- **Deste sayfasi** (`desteler/[id]/page.tsx`): Review bitmeden fun moda giriste uyari dialogu
+| # | Gorev | Dosyalar | Oncelik |
+|---|-------|----------|---------|
+| 3.1 | **Loading skeleton'lar** — Spinner yerine icerik sekilli gri placeholder'lar. Algilanan yukleme suresini azaltir | Ana sayfa, deste sayfasi, calisma modlari | Yuksek |
+| 3.2 | **Masaustu/tablet layout iyilestirmesi** — Calisma kartlari `max-w-md` ile sinirli, buyuk ekranlarda bos alan israf ediliyor. Responsive breakpoint'ler eklenir | Tum calisma modlari | Orta |
+| 3.3 | **Eslestir moduna drag & drop** — Sadece tiklama yerine surukle-birak destegi. Mobilde daha dogal his | `desteler/[id]/eslestir/page.tsx` | Orta |
+| 3.4 | **Artikel drill zorluk artisi** — Sik yanlis yapilan kelimeleri daha sik sorar (leitner mantigi). Su an hepsi esit siklikta | `desteler/[id]/artikel/page.tsx` | Dusuk |
+| 3.5 | **Animasyon tutarliligi** — Tum modlarda ayni gecis animasyonlari. Bazi modlarda animasyon var, bazilarda yok | Tum calisma modlari | Dusuk |
 
 ---
 
-## Faz 3: Anki Tarzi SRS Ayarlari
+## Faz 4: Guvenilirlik & Offline
+**Hedef:** Baglanti kopsa bile calismayi kaybetme
 
-### 3.1 Schema Degisiklikleri (Migration 0002)
-
-**Deck modeline eklenen alanlar** (her iki schema dosyasina):
-```
-learningSteps      String  @default("1,10")    // dakika, virgulle ayrilmis
-graduatingInterval Int     @default(1)          // gun
-easyInterval       Int     @default(4)          // gun
-relearningSteps    String  @default("10")       // dakika
-lapseMinInterval   Int     @default(1)          // gun
-leechThreshold     Int     @default(8)
-maxInterval        Int     @default(36500)       // ~100 yil
-startingEase       Int     @default(250)         // 2.50 (100x olarak saklanir)
-easyBonus          Int     @default(130)         // 1.30x (100x)
-intervalModifier   Int     @default(100)         // 1.00x (100x)
-hardModifier       Int     @default(120)         // 1.20x (100x)
-```
-**Card modeline:** `learningStep Int @default(0)` (cok adimli ogrenme indeksi)
-
-### 3.2 SRS Ayarlari Parser
-**Yeni dosya:** `src/lib/srs-settings.ts`
-- `SRSSettings` interface + `parseDeckSettings(deck)` fonksiyonu
-- Integer → Float donusumleri (250 → 2.50)
-
-### 3.3 SRS Algoritma Refaktoru
-**Degisiklik:** `src/lib/srs.ts`
-- `calculateNextReview(card, rating, settings?)` — opsiyonel settings parametresi
-- Cok adimli learning steps destegi (orn: 1dk → 10dk → mezuniyet)
-- Max interval limiti
-- Interval modifier, hard modifier parametrize
-- Leech detection (lapses >= threshold → suspended)
-- Varsayilan degerler mevcut davranisla ayni (geriye uyumlu)
-
-### 3.4 API Guncellemeleri
-- `src/app/api/calisma/review/route.ts` — deck settings'i cek, SRS'e gec
-- `src/app/api/kartlar/[id]/feedback/route.ts` — ayni sekilde
-- `src/app/api/desteler/[id]/route.ts` PUT — yeni SRS alanlarini kabul et
-
-### 3.5 Ayarlar UI
-**Yeni dosya:** `src/components/SRSSettingsPanel.tsx`
-- Deste ayarlari modalindan erisilir (per-deck ayar)
-- 3 sekme: Yeni Kartlar | Hatirlamama | Araliklar
-- Her alan icin varsayilana sifirla butonu
+| # | Gorev | Dosyalar | Oncelik |
+|---|-------|----------|---------|
+| 4.1 | **Feedback race condition duzeltmesi** — Ayni kart icin hizli tiklamalarda duplicate SRS guncellemesi olabiliyor. Atomik kontrol eklenir | `api/kartlar/[id]/feedback/route.ts` | Yuksek |
+| 4.2 | **Offline calisma kuyrugu** — Son cekilen calisma kartlarini cache'le, offline modda tekrar yapmaya izin ver | `public/sw.js` + yeni offline logic | Orta |
+| 4.3 | **Background sync** — Offline yapilan tekrarlar bir kuyruga atilir, internet gelince otomatik senkronize edilir | `public/sw.js` | Orta |
+| 4.4 | **SW guncelleme bildirimi** — Yeni versiyon mevcut oldugunda kullaniciya "Guncelle" butonu goster | `src/components/Providers.tsx` | Dusuk |
 
 ---
 
-## Faz 4 (Gelecek): Deste Marketi
+## Faz 5: Erisilebilirlik (Accessibility)
+**Hedef:** Temel WCAG AA uyumlulugu
 
-### Konsept
-GitHub repo bazli marketplace. Kullanicilar kategorilere gore hazir desteleri kesfedip tek tikla indirir.
-
-### Teknik
-- **Depolama:** Public GitHub reposu (besserlernen-decks)
-- **Browse API:** `GET /api/market/browse?category=A1` → GitHub repo tree'den cek
-- **Install API:** `POST /api/market/install` → mevcut import altyapisini kullanir
-- **UI:** `/market` sayfasi — kategori grid, deste kartlari, onizleme, indirme butonu
-- **Gonderim:** PR-bazli — kullanicilar marketplace reposuna PR acar, onaylananlar markette gorunur
-
-### Kategoriler
-- Goethe A1, A2, B1, B2, C1
-- Telc A1, A2, B1, B2
-- Genel Kelime Hazinesi
-- Fiiller / Sifatlar / Baglaclar
-- Gunluk Konusma
-- Topluluk Desteleri
+| # | Gorev | Dosyalar | Oncelik |
+|---|-------|----------|---------|
+| 5.1 | **ARIA label'lar** — SRS butonlari, modal, progress bar icin screen reader destegi | Tum UI component'leri | Orta |
+| 5.2 | **Klavye navigasyonu** — Skip-to-content link, tum butonlara tab erisilebilirligi | Layout + tum sayfalar | Orta |
+| 5.3 | **Renk kontrasti** — gray-400 text/white bg kombinasyonlari WCAG AA gecmiyor. Minimum 4.5:1 kontrast orani saglanir | `globals.css` + component'ler | Dusuk |
+| 5.4 | **Focus trap (modal)** — Modal acikken tab tusu modal disina cikamiyor | `src/components/ui/Modal.tsx` | Dusuk |
 
 ---
 
-## Dosya Degisiklik Ozeti
-
-| Faz | Dosya | Islem |
-|-----|-------|-------|
-| 1 | `src/app/api/desteler/[id]/smart-pool/route.ts` | YENI |
-| 1 | `src/app/api/kartlar/[id]/feedback/route.ts` | YENI |
-| 1 | `src/app/api/desteler/route.ts` | DEGISIKLIK |
-| 2 | `src/app/desteler/[id]/ogren/page.tsx` | DEGISIKLIK |
-| 2 | `src/app/desteler/[id]/test/page.tsx` | DEGISIKLIK |
-| 2 | `src/app/desteler/[id]/eslestir/page.tsx` | DEGISIKLIK |
-| 2 | `src/app/desteler/[id]/blast/page.tsx` | DEGISIKLIK |
-| 2 | `src/app/page.tsx` | DEGISIKLIK |
-| 2 | `src/app/desteler/[id]/page.tsx` | DEGISIKLIK |
-| 3 | `prisma/schema.prisma` | DEGISIKLIK |
-| 3 | `prisma/schema.production.prisma` | DEGISIKLIK |
-| 3 | `src/lib/srs-settings.ts` | YENI |
-| 3 | `src/lib/srs.ts` | DEGISIKLIK (buyuk refaktor) |
-| 3 | `src/components/SRSSettingsPanel.tsx` | YENI |
-| 3 | `src/app/api/calisma/review/route.ts` | DEGISIKLIK |
-| 3 | `src/app/api/desteler/[id]/route.ts` | DEGISIKLIK |
-
----
-
-## Oncelik Sirasi
+## Uygulama Sirasi
 
 ```
-Faz 1 → Backend temeli (smart pool + feedback)     ← EN ONCELIKLI
-Faz 2 → Frontend entegrasyonu (modlari baglama)
-Faz 3 → Anki ayarlari (schema + algoritma + UI)
-Faz 4 → Deste marketi (gelecek)
+Faz 1 → Performans         ← SIRADAKI (en cok kullanici etkisi)
+Faz 2 → Kod kalitesi       ← Paralel yapilabilir
+Faz 3 → UX cilalamasi
+Faz 4 → Guvenilirlik
+Faz 5 → Erisilebilirlik
 ```
 
-Her faz bagimsiz olarak deploy edilebilir. Faz sonunda:
-1. `npm run build` ile test
+Her faz icinde "Yuksek" oncelikli gorevler once yapilir. Her faz bagimsiz deploy edilebilir.
+
+**Deploy sureci:**
+1. `npm run build` ile dogrulama
 2. `git push` ile GitHub'a gonder
 3. Sunucuda `sudo bash update.sh` ile guncelle
 
 ---
 
-*Son guncelleme: 2026-04-01*
+*Son guncelleme: 2026-04-04*

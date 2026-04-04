@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 const VALID_ARTIKELS = ["der", "die", "das"];
@@ -190,13 +191,6 @@ export async function POST(request: NextRequest) {
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Import error:", error);
-    return NextResponse.json(
-      { error: "İçe aktarma başarısız" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Ice aktarma basarisiz");
   }
 }

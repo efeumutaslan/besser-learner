@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { deleteFromGitHub, isGitHubStorageConfigured } from "@/lib/github-storage";
 import { unlink } from "fs/promises";
 import path from "path";
@@ -34,9 +35,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ deleted });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    return NextResponse.json({ error: "Silme başarısız" }, { status: 500 });
+    return handleApiError(error, "Silme basarisiz");
   }
 }

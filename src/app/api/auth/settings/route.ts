@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET - Kullanıcı ayarlarını getir
@@ -19,14 +20,7 @@ export async function GET() {
 
     return NextResponse.json(fullUser);
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Settings GET error:", error);
-    return NextResponse.json(
-      { error: "Ayarlar yüklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Ayarlar yuklenemedi");
   }
 }
 
@@ -60,13 +54,6 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(updated);
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Settings PUT error:", error);
-    return NextResponse.json(
-      { error: "Ayarlar güncellenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Ayarlar guncellenemedi");
   }
 }

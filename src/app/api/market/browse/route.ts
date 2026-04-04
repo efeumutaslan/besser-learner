@@ -1,4 +1,5 @@
 import { requireAuth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 const MARKET_REPO = "efeumutaslan/besserlernen-decks";
@@ -66,13 +67,6 @@ export async function GET(request: NextRequest) {
       total: decks.length,
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erisim" }, { status: 401 });
-    }
-    console.error("Market browse error:", error);
-    return NextResponse.json(
-      { error: "Market yuklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Market yuklenemedi");
   }
 }

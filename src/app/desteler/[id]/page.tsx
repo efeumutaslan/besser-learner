@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useToast } from "@/context/ToastContext";
 import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
 import CardForm, { type CardFormData } from "@/components/CardForm";
@@ -75,9 +76,81 @@ interface DeckDetail {
   };
 }
 
+const CardListItem = memo(function CardListItem({
+  card,
+  onEdit,
+  onDelete,
+}: {
+  card: Card;
+  onEdit: (card: Card) => void;
+  onDelete: (id: string) => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-xl border p-3 transition-all",
+        getArtikelBgColor(card.artikel)
+      )}
+    >
+      <div className="flex items-start justify-between">
+        {card.imageUrl && (
+          <img
+            src={card.imageUrl}
+            alt={card.word}
+            className="w-10 h-10 rounded-lg object-cover mr-3 flex-shrink-0"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            {card.artikel && card.artikel !== "-" && (
+              <span
+                className={cn(
+                  "text-[10px] px-2 py-0.5 rounded-full font-bold",
+                  getArtikelBadgeColor(card.artikel)
+                )}
+              >
+                {card.artikel}
+              </span>
+            )}
+            <span className="font-semibold text-gray-900 dark:text-white">{card.word}</span>
+            {card.plural && (
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                (Pl. {card.plural})
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+            {card.wordTranslation}
+          </p>
+          {card.exampleSentence && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">
+              &quot;{card.exampleSentence}&quot;
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-1 ml-2">
+          <button
+            onClick={() => onEdit(card)}
+            className="p-1.5 rounded-lg hover:bg-white/30 dark:hover:bg-white/10"
+          >
+            <Pencil className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+          </button>
+          <button
+            onClick={() => onDelete(card.id)}
+            className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30"
+          >
+            <Trash2 className="w-4 h-4 text-red-400" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 export default function DeckDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { toast } = useToast();
   const deckId = params.id as string;
 
   const [deck, setDeck] = useState<DeckDetail | null>(null);
@@ -156,8 +229,8 @@ export default function DeckDetailPage() {
         setShowSettings(false);
         fetchDeck(false);
       }
-    } catch (err) {
-      console.error("Ayarlar kaydedilemedi:", err);
+    } catch {
+      toast("Ayarlar kaydedilemedi", "error");
     } finally {
       setSavingSettings(false);
     }
@@ -206,6 +279,9 @@ export default function DeckDetailPage() {
     }
   };
 
+  const handleEditClick = useCallback((card: Card) => setEditingCard(card), []);
+  const handleDeleteClick = useCallback((id: string) => setDeleteConfirm(id), []);
+
   const displayCards = isShuffled ? shuffledCards : deck?.cards || [];
 
   const handleFetchImages = async () => {
@@ -218,16 +294,22 @@ export default function DeckDetailPage() {
         setImageResult(`${data.updated} karta resim eklendi`);
         fetchDeck(false);
       } else {
-        setImageResult("Hata: " + (data.error || "Bilinmeyen hata"));
+        const msg = data.error || "Bilinmeyen hata";
+        setImageResult("Hata: " + msg);
+        toast(msg, "error");
       }
     } catch {
-      setImageResult("Bağlantı hatası");
+      setImageResult("Baglanti hatasi");
+      toast("Resim cekme basarisiz", "error");
     } finally {
       setFetchingImages(false);
     }
   };
 
-  const cardsWithoutImage = deck?.cards.filter((c) => !c.imageUrl).length || 0;
+  const cardsWithoutImage = useMemo(
+    () => deck?.cards.filter((c) => !c.imageUrl).length || 0,
+    [deck?.cards]
+  );
 
   const handleDeleteDeck = async () => {
     const res = await fetch(`/api/desteler/${deckId}`, { method: "DELETE" });
@@ -520,65 +602,12 @@ export default function DeckDetailPage() {
         ) : (
           <div className="space-y-2">
             {displayCards.map((card) => (
-              <div
+              <CardListItem
                 key={card.id}
-                className={cn(
-                  "rounded-xl border p-3 transition-all",
-                  getArtikelBgColor(card.artikel)
-                )}
-              >
-                <div className="flex items-start justify-between">
-                  {card.imageUrl && (
-                    <img
-                      src={card.imageUrl}
-                      alt={card.word}
-                      className="w-10 h-10 rounded-lg object-cover mr-3 flex-shrink-0"
-                    />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      {card.artikel && card.artikel !== "-" && (
-                        <span
-                          className={cn(
-                            "text-[10px] px-2 py-0.5 rounded-full font-bold",
-                            getArtikelBadgeColor(card.artikel)
-                          )}
-                        >
-                          {card.artikel}
-                        </span>
-                      )}
-                      <span className="font-semibold text-gray-900 dark:text-white">{card.word}</span>
-                      {card.plural && (
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          (Pl. {card.plural})
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-0.5">
-                      {card.wordTranslation}
-                    </p>
-                    {card.exampleSentence && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 italic">
-                        &quot;{card.exampleSentence}&quot;
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 ml-2">
-                    <button
-                      onClick={() => setEditingCard(card)}
-                      className="p-1.5 rounded-lg hover:bg-white/30 dark:hover:bg-white/10"
-                    >
-                      <Pencil className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                    </button>
-                    <button
-                      onClick={() => setDeleteConfirm(card.id)}
-                      className="p-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-400" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                card={card}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+              />
             ))}
           </div>
         )}

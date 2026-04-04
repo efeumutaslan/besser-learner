@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
+import { ToastProvider } from "@/context/ToastContext";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -13,7 +14,9 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider>
-      <AuthProvider>{children}</AuthProvider>
+      <ToastProvider>
+        <AuthProvider>{children}</AuthProvider>
+      </ToastProvider>
     </ThemeProvider>
   );
 }

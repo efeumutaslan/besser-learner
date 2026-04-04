@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { requireAuth, requireDeckOwnership } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
+import { calculateDailyLimitedStats } from "@/lib/deck-stats";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET - Tek deste detayı
@@ -30,7 +32,6 @@ export async function GET(
       );
     }
 
-    const now = new Date();
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
@@ -54,49 +55,25 @@ export async function GET(
       },
     });
 
-    const remainingNew = Math.max(0, deck.newPerDay - todayNewStarted);
-    const remainingReview = Math.max(0, deck.reviewPerDay - todayReviewedCards.length);
-
-    // Aktif öğrenimdeki kartlar (due olanlar)
-    const learningDueCount = deck.cards.filter(
-      (c) => (c.status === "LEARNING" || c.status === "RELEARN") && new Date(c.dueDate) <= now
-    ).length;
-
-    // Due olan review kartları (henüz bugün yapılmamış + limit dahilinde)
-    const reviewDueCards = deck.cards.filter(
-      (c) => c.status === "REVIEW" && new Date(c.dueDate) <= now && !todayReviewedCardIds.has(c.id)
-    );
-    const reviewDueCount = Math.min(reviewDueCards.length, remainingReview);
-
-    // Gösterilecek yeni kart sayısı (limit dahilinde)
-    const newCount = Math.min(
-      deck.cards.filter((c) => c.status === "NEW").length,
-      remainingNew
+    const computed = calculateDailyLimitedStats(
+      deck.cards,
+      todayReviewedCardIds,
+      todayNewStarted,
+      deck.newPerDay,
+      deck.reviewPerDay
     );
 
     const stats = {
       total: deck._count.cards,
-      new: newCount,
-      learning: learningDueCount,
-      review: reviewDueCount,
-      mature: deck.cards.filter(
-        (c) => c.status === "REVIEW" && c.interval >= 21
-      ).length,
+      new: computed.newCount,
+      learning: computed.learningDueCount,
+      review: computed.reviewDueCount,
+      mature: computed.matureCount,
     };
 
     return NextResponse.json({ ...deck, stats });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Deste bulunamadı" }, { status: 404 });
-    }
-    console.error("Error fetching deck:", error);
-    return NextResponse.json(
-      { error: "Deste yüklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Deste yuklenemedi");
   }
 }
 
@@ -145,17 +122,7 @@ export async function PUT(
 
     return NextResponse.json(deck);
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Deste bulunamadı" }, { status: 404 });
-    }
-    console.error("Error updating deck:", error);
-    return NextResponse.json(
-      { error: "Deste güncellenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Deste guncellenemedi");
   }
 }
 
@@ -171,16 +138,6 @@ export async function DELETE(
     await db.deck.delete({ where: { id: params.id } });
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Deste bulunamadı" }, { status: 404 });
-    }
-    console.error("Error deleting deck:", error);
-    return NextResponse.json(
-      { error: "Deste silinemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Deste silinemedi");
   }
 }

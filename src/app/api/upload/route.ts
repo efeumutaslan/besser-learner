@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { uploadToGitHub, isGitHubStorageConfigured } from "@/lib/github-storage";
 import { writeFile, mkdir } from "fs/promises";
 import { existsSync } from "fs";
@@ -72,13 +73,6 @@ export async function POST(request: NextRequest) {
     const url = `/uploads/${fileName}`;
     return NextResponse.json({ url, name: fileName, storage: "local" });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Upload error:", error);
-    return NextResponse.json(
-      { error: "Dosya yüklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Dosya yuklenemedi");
   }
 }

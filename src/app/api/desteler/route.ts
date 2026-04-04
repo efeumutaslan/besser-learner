@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
+import { calculateSimpleStats } from "@/lib/deck-stats";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET - Tüm desteleri getir
@@ -15,6 +17,7 @@ export async function GET() {
         },
         cards: {
           select: {
+            id: true,
             status: true,
             dueDate: true,
           },
@@ -23,21 +26,8 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    const now = new Date();
-
     const result = decks.map((deck) => {
-      const totalCards = deck._count.cards;
-      const newCount = deck.cards.filter((c) => c.status === "NEW").length;
-      const learningCount = deck.cards.filter(
-        (c) =>
-          (c.status === "LEARNING" || c.status === "RELEARN") &&
-          new Date(c.dueDate) <= now
-      ).length;
-      const reviewCount = deck.cards.filter(
-        (c) => c.status === "REVIEW" && new Date(c.dueDate) <= now
-      ).length;
-      const dueCount = learningCount + reviewCount;
-
+      const stats = calculateSimpleStats(deck.cards);
       return {
         id: deck.id,
         name: deck.name,
@@ -45,25 +35,15 @@ export async function GET() {
         color: deck.color,
         newPerDay: deck.newPerDay,
         reviewPerDay: deck.reviewPerDay,
-        totalCards,
-        newCount,
-        learningCount,
-        reviewCount,
-        dueCount,
+        totalCards: deck._count.cards,
+        ...stats,
         createdAt: deck.createdAt,
       };
     });
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Error fetching decks:", error);
-    return NextResponse.json(
-      { error: "Desteler yüklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Desteler yuklenemedi");
   }
 }
 
@@ -94,13 +74,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(deck, { status: 201 });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Error creating deck:", error);
-    return NextResponse.json(
-      { error: "Deste oluşturulamadı" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Deste olusturulamadi");
   }
 }

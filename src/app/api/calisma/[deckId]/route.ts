@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth, requireDeckOwnership } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET - Çalışılacak kartları getir (SRS kuyruğu)
@@ -140,16 +141,6 @@ export async function GET(
       },
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Deste bulunamadı" }, { status: 404 });
-    }
-    console.error("Error getting study queue:", error);
-    return NextResponse.json(
-      { error: "Çalışma kuyruğu yüklenemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Calisma kuyrugu yuklenemedi");
   }
 }

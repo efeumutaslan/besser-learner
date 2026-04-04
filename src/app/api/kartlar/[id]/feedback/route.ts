@@ -3,6 +3,7 @@ import { requireAuth, requireCardOwnership } from "@/lib/auth";
 import { calculateNextReview } from "@/lib/srs";
 import { parseDeckSettings } from "@/lib/srs-settings";
 import { getNextMastery, type MasteryLevel } from "@/lib/gamification";
+import { handleApiError } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST - Fun modlardan SRS geri bildirimi
@@ -128,16 +129,6 @@ export async function POST(
       srsApplied: shouldApplySRS,
     });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erisim" }, { status: 401 });
-    }
-    if (error instanceof Error && (error.message === "NOT_FOUND" || error.message === "FORBIDDEN")) {
-      return NextResponse.json({ error: "Kart bulunamadi" }, { status: 404 });
-    }
-    console.error("Feedback error:", error);
-    return NextResponse.json(
-      { error: "Geri bildirim kaydedilemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Geri bildirim kaydedilemedi");
   }
 }

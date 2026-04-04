@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAuth, removeAuthCookie } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-utils";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST - SRS ilerlemesini sıfırla (kartları koru)
@@ -67,14 +68,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Reset error:", error);
-    return NextResponse.json(
-      { error: "Sıfırlama başarısız" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Sifirlama basarisiz");
   }
 }
 
@@ -101,13 +95,6 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
-    if (error instanceof Error && error.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Yetkisiz erişim" }, { status: 401 });
-    }
-    console.error("Delete account error:", error);
-    return NextResponse.json(
-      { error: "Hesap silinemedi" },
-      { status: 500 }
-    );
+    return handleApiError(error, "Hesap silinemedi");
   }
 }

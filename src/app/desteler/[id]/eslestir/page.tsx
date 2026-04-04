@@ -43,7 +43,8 @@ export default function MatchPage() {
   const [matchedCount, setMatchedCount] = useState(0);
   const [penaltyTime, setPenaltyTime] = useState(0);
   const [startTime] = useState(Date.now());
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerRef = useRef<number | null>(null);
+  const timerStartRef = useRef<number>(0);
 
   const setupGame = useCallback(
     (allCards: Card[]) => {
@@ -84,10 +85,14 @@ export default function MatchPage() {
       setMatchedCount(0);
       setPenaltyTime(0);
 
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = setInterval(() => {
-        setTimer((prev) => prev + 1);
-      }, 100); // 100ms hassasiyet
+      if (timerRef.current) cancelAnimationFrame(timerRef.current);
+      timerStartRef.current = performance.now();
+      const tick = () => {
+        const elapsed = performance.now() - timerStartRef.current;
+        setTimer(Math.floor(elapsed / 100)); // 100ms hassasiyet
+        timerRef.current = requestAnimationFrame(tick);
+      };
+      timerRef.current = requestAnimationFrame(tick);
     },
     [directionPref]
   );
@@ -110,7 +115,7 @@ export default function MatchPage() {
     fetchCards();
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      if (timerRef.current) cancelAnimationFrame(timerRef.current);
     };
   }, [deckId, router, setupGame]);
 
@@ -149,7 +154,7 @@ export default function MatchPage() {
             const newCount = prev + 1;
             if (newCount >= leftItems.length) {
               setCompleted(true);
-              if (timerRef.current) clearInterval(timerRef.current);
+              if (timerRef.current) cancelAnimationFrame(timerRef.current);
             }
             return newCount;
           });
