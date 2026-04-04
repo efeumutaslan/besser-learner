@@ -439,6 +439,46 @@ export default function DeckDetailPage() {
         </div>
       </div>
 
+      {/* Toplu resim çekme banner */}
+      {cardsWithoutImage > 0 && (
+        <div className="px-4 pb-2">
+          <div className="rounded-2xl border-2 border-dashed border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/20 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-800/50 flex items-center justify-center">
+                  <ImageIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-emerald-800 dark:text-emerald-200">
+                    {cardsWithoutImage} kart resim bekliyor
+                  </p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                    Pixabay&apos;dan otomatik resim ekle
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleFetchImages}
+                disabled={fetchingImages}
+                className="px-4 py-2 rounded-xl text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-all disabled:opacity-50 flex items-center gap-2"
+              >
+                {fetchingImages ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Çekiliyor...
+                  </>
+                ) : (
+                  "Resimleri Çek"
+                )}
+              </button>
+            </div>
+            {imageResult && (
+              <p className="text-xs text-emerald-700 dark:text-emerald-300 mt-2 font-medium">{imageResult}</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Kart listesi */}
       <div className="p-4">
         <div className="flex items-center justify-between mb-3">
@@ -446,16 +486,6 @@ export default function DeckDetailPage() {
             KARTLAR ({deck.cards.length})
           </h3>
           <div className="flex items-center gap-2">
-            {cardsWithoutImage > 0 && (
-              <button
-                onClick={handleFetchImages}
-                disabled={fetchingImages}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-emerald-900/20 transition-all disabled:opacity-50"
-              >
-                <ImageIcon className={cn("w-4 h-4", fetchingImages && "animate-pulse")} />
-                {fetchingImages ? "Çekiliyor..." : `${cardsWithoutImage} Resim`}
-              </button>
-            )}
             {deck.cards.length > 1 && (
               <button
                 onClick={handleShuffle}
@@ -479,9 +509,6 @@ export default function DeckDetailPage() {
               Kart Ekle
             </Button>
           </div>
-          {imageResult && (
-            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 text-right">{imageResult}</p>
-          )}
         </div>
 
         {deck.cards.length === 0 ? (
