@@ -4,7 +4,6 @@
  * Bulunan resim URL'i kartın imageUrl'ine kaydedilir, böylece tekrar çekilmez.
  */
 
-const PIXABAY_API_KEY = process.env.PIXABAY_API_KEY;
 const PIXABAY_ENDPOINT = "https://pixabay.com/api/";
 
 interface PixabayHit {
@@ -26,11 +25,12 @@ interface PixabayResponse {
  * previewURL (150px) kalıcı bir CDN URL'idir — webformatURL gibi expire olmaz.
  */
 export async function searchImage(word: string): Promise<string | null> {
-  if (!PIXABAY_API_KEY) return null;
+  const apiKey = process.env.PIXABAY_API_KEY;
+  if (!apiKey) return null;
 
   try {
     const params = new URLSearchParams({
-      key: PIXABAY_API_KEY,
+      key: apiKey,
       q: word,
       image_type: "photo",
       per_page: "3",
@@ -74,7 +74,7 @@ export async function searchImagesForWords(
 ): Promise<Map<string, string | null>> {
   const results = new Map<string, string | null>();
 
-  if (!PIXABAY_API_KEY) {
+  if (!process.env.PIXABAY_API_KEY) {
     words.forEach((w) => results.set(w, null));
     return results;
   }

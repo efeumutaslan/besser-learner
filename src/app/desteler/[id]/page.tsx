@@ -23,6 +23,7 @@ import {
   Type,
   PenLine,
   GraduationCap,
+  ImageIcon,
 } from "lucide-react";
 
 type StudyDirection = "de_to_tr" | "tr_to_de" | "mixed";
@@ -90,6 +91,8 @@ export default function DeckDetailPage() {
   const [pendingNav, setPendingNav] = useState<string | null>(null);
   const [direction, setDirection] = useState<StudyDirection>("mixed");
   const [savingSettings, setSavingSettings] = useState(false);
+  const [fetchingImages, setFetchingImages] = useState(false);
+  const [imageResult, setImageResult] = useState<string | null>(null);
   const [srsForm, setSrsForm] = useState({
     newPerDay: 20,
     reviewPerDay: 200,
@@ -204,6 +207,27 @@ export default function DeckDetailPage() {
   };
 
   const displayCards = isShuffled ? shuffledCards : deck?.cards || [];
+
+  const handleFetchImages = async () => {
+    setFetchingImages(true);
+    setImageResult(null);
+    try {
+      const res = await fetch(`/api/desteler/${deckId}/fetch-images`, { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setImageResult(`${data.updated} karta resim eklendi`);
+        fetchDeck(false);
+      } else {
+        setImageResult("Hata: " + (data.error || "Bilinmeyen hata"));
+      }
+    } catch {
+      setImageResult("Bağlantı hatası");
+    } finally {
+      setFetchingImages(false);
+    }
+  };
+
+  const cardsWithoutImage = deck?.cards.filter((c) => !c.imageUrl).length || 0;
 
   const handleDeleteDeck = async () => {
     const res = await fetch(`/api/desteler/${deckId}`, { method: "DELETE" });
@@ -422,6 +446,16 @@ export default function DeckDetailPage() {
             KARTLAR ({deck.cards.length})
           </h3>
           <div className="flex items-center gap-2">
+            {cardsWithoutImage > 0 && (
+              <button
+                onClick={handleFetchImages}
+                disabled={fetchingImages}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-emerald-900/20 transition-all disabled:opacity-50"
+              >
+                <ImageIcon className={cn("w-4 h-4", fetchingImages && "animate-pulse")} />
+                {fetchingImages ? "Çekiliyor..." : `${cardsWithoutImage} Resim`}
+              </button>
+            )}
             {deck.cards.length > 1 && (
               <button
                 onClick={handleShuffle}
@@ -445,6 +479,9 @@ export default function DeckDetailPage() {
               Kart Ekle
             </Button>
           </div>
+          {imageResult && (
+            <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 text-right">{imageResult}</p>
+          )}
         </div>
 
         {deck.cards.length === 0 ? (
