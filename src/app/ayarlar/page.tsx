@@ -304,7 +304,7 @@ export default function SettingsPage() {
       <div className="px-4 space-y-4">
         {/* Profil */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2 px-1">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 px-1">
             PROFİL
           </h3>
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700">
@@ -315,10 +315,10 @@ export default function SettingsPage() {
               }}
               className="flex items-center gap-3 p-4 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              <User className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <User className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               <div className="flex-1">
                 <p className="font-medium text-sm">Görünen Ad</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   {settings?.displayName || user?.displayName || user?.username}
                 </p>
               </div>
@@ -333,10 +333,10 @@ export default function SettingsPage() {
               }}
               className="flex items-center gap-3 p-4 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-700"
             >
-              <Lock className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Lock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               <div className="flex-1">
                 <p className="font-medium text-sm">Şifre Değiştir</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Hesap şifrenizi güncelleyin
                 </p>
               </div>
@@ -346,7 +346,7 @@ export default function SettingsPage() {
 
         {/* Genel */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2 px-1">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 px-1">
             GENEL
           </h3>
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700">
@@ -357,11 +357,11 @@ export default function SettingsPage() {
               {theme === "dark" ? (
                 <Moon className="w-5 h-5 text-brand-400" />
               ) : (
-                <Sun className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                <Sun className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               )}
               <div className="flex-1">
                 <p className="font-medium text-sm">Karanlık Mod</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Göz dostu karanlık tema
                 </p>
               </div>
@@ -378,10 +378,10 @@ export default function SettingsPage() {
               </div>
             </button>
             <div className="flex items-center gap-3 p-4">
-              <Settings className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Settings className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               <div className="flex-1">
                 <p className="font-medium text-sm">Varsayılan Günlük Yeni Kart</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Yeni desteler için varsayılan ayar
                 </p>
               </div>
@@ -404,10 +404,10 @@ export default function SettingsPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 p-4">
-              <Settings className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Settings className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               <div className="flex-1">
                 <p className="font-medium text-sm">Varsayılan Günlük Tekrar</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Günlük maksimum tekrar sayısı
                 </p>
               </div>
@@ -434,7 +434,7 @@ export default function SettingsPage() {
 
         {/* Veri Yönetimi */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2 px-1">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 px-1">
             VERİ YÖNETİMİ
           </h3>
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 divide-y dark:divide-gray-700">
@@ -443,10 +443,10 @@ export default function SettingsPage() {
               disabled={exporting}
               className="flex items-center gap-3 p-4 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
             >
-              <Download className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Download className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               <div className="flex-1">
                 <p className="font-medium text-sm">Verileri Dışa Aktar</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">JSON formatında indir</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">JSON formatında indir</p>
               </div>
               {exporting && (
                 <div className="animate-spin w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full" />
@@ -457,10 +457,10 @@ export default function SettingsPage() {
               disabled={importing}
               className="flex items-center gap-3 p-4 w-full text-left hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
             >
-              <Upload className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Upload className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               <div className="flex-1">
                 <p className="font-medium text-sm">Verileri İçe Aktar</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">JSON dosyası yükle</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">JSON dosyası yükle</p>
               </div>
               {importing && (
                 <div className="animate-spin w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full" />
@@ -501,7 +501,7 @@ export default function SettingsPage() {
               <RotateCcw className="w-5 h-5 text-orange-500" />
               <div className="flex-1">
                 <p className="font-medium text-sm">İlerlemeyi Sıfırla</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Kartlar korunur, SRS ve istatistikler sıfırlanır
                 </p>
               </div>
@@ -516,7 +516,7 @@ export default function SettingsPage() {
               <Trash2 className="w-5 h-5 text-red-500" />
               <div className="flex-1">
                 <p className="font-medium text-sm text-red-600">Hesabı Sil</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
                   Tüm veriler kalıcı olarak silinir
                 </p>
               </div>
@@ -526,15 +526,15 @@ export default function SettingsPage() {
 
         {/* Hakkında */}
         <div>
-          <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2 px-1">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2 px-1">
             HAKKINDA
           </h3>
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3 p-4">
-              <Info className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+              <Info className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               <div className="flex-1">
                 <p className="font-medium text-sm">BesserLernen</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Versiyon 0.1.0</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Versiyon 0.1.0</p>
               </div>
             </div>
           </div>

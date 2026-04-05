@@ -91,7 +91,7 @@ function ImageUpload({
         type="button"
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="flex items-center justify-center gap-2 w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-400 hover:border-brand-400 dark:hover:border-brand-500 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-all"
+        className="flex items-center justify-center gap-2 w-32 h-32 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 hover:border-brand-400 dark:hover:border-brand-500 hover:text-brand-500 hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-all"
       >
         {uploading ? (
           <div className="animate-spin w-5 h-5 border-2 border-brand-500 border-t-transparent rounded-full" />
@@ -172,7 +172,7 @@ function AudioUpload({
         type="button"
         onClick={() => fileRef.current?.click()}
         disabled={uploading}
-        className="flex items-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-400 hover:border-brand-400 dark:hover:border-brand-500 hover:text-brand-500 transition-all w-full"
+        className="flex items-center gap-2 px-3 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-500 hover:border-brand-400 dark:hover:border-brand-500 hover:text-brand-500 transition-all w-full"
       >
         {uploading ? (
           <div className="animate-spin w-4 h-4 border-2 border-brand-500 border-t-transparent rounded-full" />

@@ -162,7 +162,7 @@ export default function GrammarDrillPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <p className="text-gray-500 dark:text-gray-400 mb-2 font-medium">Gramer Drill</p>
-        <p className="text-gray-400 dark:text-gray-500 mb-4 text-sm">
+        <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
           Bu destede hal eki (Nominativ/Akkusativ/Dativ) bilgisi olan kart bulunamadi.
         </p>
         <Button onClick={() => router.push(`/desteler/${deckId}`)}>Geri Don</Button>
@@ -201,11 +201,18 @@ export default function GrammarDrillPage() {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-4 py-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push(`/desteler/${deckId}`)} className="p-1">
+          <button onClick={() => router.push(`/desteler/${deckId}`)} aria-label="Geri don" className="p-1">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Gramer ilerlemesi"
+              className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+            >
               <motion.div
                 className="h-full bg-violet-500 rounded-full"
                 animate={{ width: `${progress}%` }}
@@ -235,7 +242,7 @@ export default function GrammarDrillPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md md:max-w-lg">
           <div className="text-center mb-2">
-            <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Gramer Drill
             </span>
           </div>
@@ -258,11 +265,11 @@ export default function GrammarDrillPage() {
               </span>
 
               {/* Nominativ formu */}
-              <p className="text-sm text-gray-400 dark:text-gray-500 mb-2">Nominativ:</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Nominativ:</p>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-3">
                 {currentQuestion.givenForm}
               </h2>
-              <p className="text-sm text-gray-400 dark:text-gray-500">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
                 ({currentQuestion.card.wordTranslation})
               </p>
 

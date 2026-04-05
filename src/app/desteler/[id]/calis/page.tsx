@@ -212,12 +212,20 @@ export default function StudyPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/desteler/${deckId}`)}
+            aria-label="Geri don"
             className="p-1"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Calisma ilerlemesi"
+              className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+            >
               <div
                 className="h-full bg-brand-500 rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
@@ -265,7 +273,7 @@ export default function StudyPage() {
               {frontText}
             </h2>
             {showPlural && (
-              <p className="text-gray-400 dark:text-gray-500 text-sm">
+              <p className="text-gray-500 dark:text-gray-400 text-sm">
                 Çoğul: {currentCard.plural}
               </p>
             )}
@@ -316,13 +324,13 @@ export default function StudyPage() {
                 currentCard.akkusativ ||
                 currentCard.dativ) && (
                 <div className="border-t pt-3">
-                  <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-2">
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-2">
                     HAL EKLERİ
                   </h4>
                   <div className="grid grid-cols-3 gap-2 text-sm">
                     {currentCard.nominativ && (
                       <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2 text-center">
-                        <div className="text-[10px] text-gray-400 dark:text-gray-500">NOM</div>
+                        <div className="text-[10px] text-gray-500 dark:text-gray-400">NOM</div>
                         <div className="font-medium">
                           {currentCard.nominativ}
                         </div>
@@ -330,7 +338,7 @@ export default function StudyPage() {
                     )}
                     {currentCard.akkusativ && (
                       <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2 text-center">
-                        <div className="text-[10px] text-gray-400 dark:text-gray-500">AKK</div>
+                        <div className="text-[10px] text-gray-500 dark:text-gray-400">AKK</div>
                         <div className="font-medium">
                           {currentCard.akkusativ}
                         </div>
@@ -338,7 +346,7 @@ export default function StudyPage() {
                     )}
                     {currentCard.dativ && (
                       <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2 text-center">
-                        <div className="text-[10px] text-gray-400 dark:text-gray-500">DAT</div>
+                        <div className="text-[10px] text-gray-500 dark:text-gray-400">DAT</div>
                         <div className="font-medium">{currentCard.dativ}</div>
                       </div>
                     )}
@@ -348,7 +356,7 @@ export default function StudyPage() {
 
               {currentCard.exampleSentence && (
                 <div className="border-t pt-3">
-                  <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1">
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
                     ÖRNEK CÜMLE
                   </h4>
                   <p className="text-sm italic text-gray-700 dark:text-gray-200">
@@ -364,7 +372,7 @@ export default function StudyPage() {
 
               {currentCard.notes && (
                 <div className="border-t pt-3">
-                  <h4 className="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1">
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
                     NOT
                   </h4>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{currentCard.notes}</p>
@@ -390,6 +398,7 @@ export default function StudyPage() {
             <button
               onClick={() => handleRating("again")}
               disabled={reviewing}
+              aria-label={`Tekrar - ${intervals.again}`}
               className="srs-btn srs-again"
             >
               <div className="text-xs opacity-80">{intervals.again}</div>
@@ -398,6 +407,7 @@ export default function StudyPage() {
             <button
               onClick={() => handleRating("hard")}
               disabled={reviewing}
+              aria-label={`Zor - ${intervals.hard}`}
               className="srs-btn srs-hard"
             >
               <div className="text-xs opacity-80">{intervals.hard}</div>
@@ -406,6 +416,7 @@ export default function StudyPage() {
             <button
               onClick={() => handleRating("good")}
               disabled={reviewing}
+              aria-label={`Iyi - ${intervals.good}`}
               className="srs-btn srs-good"
             >
               <div className="text-xs opacity-80">{intervals.good}</div>
@@ -414,13 +425,14 @@ export default function StudyPage() {
             <button
               onClick={() => handleRating("easy")}
               disabled={reviewing}
+              aria-label={`Kolay - ${intervals.easy}`}
               className="srs-btn srs-easy"
             >
               <div className="text-xs opacity-80">{intervals.easy}</div>
               <div>Kolay</div>
             </button>
           </div>
-          <p className="text-center text-[10px] text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-center text-[10px] text-gray-500 dark:text-gray-400 mt-2">
             Kısayollar: 1=Tekrar, 2=Zor, 3=İyi, 4=Kolay | Boşluk=Cevabı Göster
           </p>
         </div>

@@ -43,7 +43,7 @@ export default function DeckCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-base truncate">{name}</h3>
-              <ChevronRight className="w-5 h-5 text-gray-400 dark:text-gray-500 group-hover:text-brand-500 transition-colors flex-shrink-0" />
+              <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-500 group-hover:text-brand-500 transition-colors flex-shrink-0" />
             </div>
             {description && (
               <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 truncate">
@@ -53,7 +53,7 @@ export default function DeckCard({
 
             {/* Stats */}
             <div className="flex items-center gap-3 mt-2">
-              <span className="text-xs text-gray-400 dark:text-gray-500">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
                 {totalCards} kart
               </span>
               {dueCount > 0 && (
@@ -96,7 +96,7 @@ export function NewDeckCard({ onClick }: { onClick: () => void }) {
       className="w-full bg-white dark:bg-gray-800 rounded-2xl border-2 border-dashed border-gray-300 dark:border-gray-600 p-4 hover:border-brand-400 hover:bg-brand-50 dark:hover:border-brand-500 dark:hover:bg-brand-900/20 transition-all group"
     >
       <div className="flex items-center justify-center gap-2 py-2">
-        <Plus className="w-5 h-5 text-gray-400 group-hover:text-brand-500" />
+        <Plus className="w-5 h-5 text-gray-500 group-hover:text-brand-500" />
         <span className="font-semibold text-gray-500 dark:text-gray-400 group-hover:text-brand-600">
           Yeni Deste Oluştur
         </span>

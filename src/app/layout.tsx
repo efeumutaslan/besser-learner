@@ -29,8 +29,14 @@ export default function RootLayout({
   return (
     <html lang="tr" suppressHydrationWarning>
       <body className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-[9999] focus:top-2 focus:left-2 focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-semibold"
+        >
+          Ana icerige atla
+        </a>
         <Providers>
-          <div className="mx-auto max-w-lg min-h-screen bg-white dark:bg-gray-800 shadow-sm lg:max-w-6xl">
+          <div id="main-content" className="mx-auto max-w-lg min-h-screen bg-white dark:bg-gray-800 shadow-sm lg:max-w-6xl">
             {children}
           </div>
         </Providers>

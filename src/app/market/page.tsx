@@ -202,7 +202,7 @@ export default function MarketPage() {
                           <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
                             {deck.name}
                           </h3>
-                          <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                          <p className="text-[10px] text-gray-500 dark:text-gray-400">
                             {deck.author} · {deck.cardCount} kart
                           </p>
                         </div>

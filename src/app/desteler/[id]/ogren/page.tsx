@@ -534,12 +534,20 @@ export default function LearnPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/desteler/${deckId}`)}
+            aria-label="Geri don"
             className="p-1"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Ogrenme ilerlemesi"
+              className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+            >
               <motion.div
                 className="h-full bg-green-500 rounded-full"
                 animate={{ width: `${progress}%` }}
@@ -580,7 +588,7 @@ export default function LearnPage() {
 
       {/* Soru tipi etiketi */}
       <div className="text-center pt-4">
-        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           {currentQuestion.type === "multipleChoice" && "Çoktan Seçmeli"}
           {currentQuestion.type === "trueFalse" && "Doğru / Yanlış"}
           {currentQuestion.type === "written" && "Yazılı"}
@@ -689,7 +697,7 @@ export default function LearnPage() {
           {currentQuestion.type === "trueFalse" && (
             <>
               <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 text-center mb-6">
-                <p className="text-sm text-gray-400 dark:text-gray-500 mb-3">Bu doğru mu?</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">Bu doğru mu?</p>
                 <h2 className="text-xl font-bold">
                   {currentQuestion.tfStatement}
                 </h2>
@@ -894,7 +902,7 @@ export default function LearnPage() {
                       >
                         {currentQuestion.prompt}
                       </h2>
-                      <p className="text-gray-400 dark:text-gray-500 text-sm mt-4">
+                      <p className="text-gray-500 dark:text-gray-400 text-sm mt-4">
                         <Eye className="w-4 h-4 inline mr-1" />
                         Çevirmek için tıkla
                       </p>
@@ -905,7 +913,7 @@ export default function LearnPage() {
                         {currentQuestion.correctAnswer}
                       </h2>
                       {currentQuestion.card.exampleSentence && (
-                        <p className="text-sm text-gray-400 dark:text-gray-500 mt-3 italic">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 italic">
                           &quot;{currentQuestion.card.exampleSentence}&quot;
                         </p>
                       )}
@@ -966,7 +974,7 @@ export default function LearnPage() {
         <div className="flex justify-center gap-6 text-[10px] font-medium">
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-gray-300" />
-            <span className="text-gray-400 dark:text-gray-500">
+            <span className="text-gray-500 dark:text-gray-400">
               Yeni{" "}
               {
                 Array.from(cardProgress.values()).filter(

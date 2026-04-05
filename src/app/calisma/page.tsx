@@ -61,7 +61,7 @@ export default function StudyOverviewPage() {
                 ? "Henüz deste oluşturmadın"
                 : "Bugünkü tekrarların tamamlandı!"}
             </h2>
-            <p className="text-gray-400 dark:text-gray-500 text-sm mb-6">
+            <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
               {decks.length === 0
                 ? "Ana sayfadan yeni bir deste oluştur"
                 : "Pratik modlarıyla çalışmaya devam edebilirsin"}

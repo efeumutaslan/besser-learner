@@ -363,6 +363,7 @@ export default function MatchPage() {
         <div className="flex items-center justify-between">
           <button
             onClick={() => router.push(`/desteler/${deckId}`)}
+            aria-label="Geri don"
             className="p-1"
           >
             <ArrowLeft className="w-5 h-5" />

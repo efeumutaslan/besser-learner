@@ -475,12 +475,20 @@ export default function TestPage() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/desteler/${deckId}`)}
+            aria-label="Geri don"
             className="p-1"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Test ilerlemesi"
+              className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+            >
               <motion.div
                 className="h-full bg-purple-500 rounded-full"
                 animate={{ width: `${progress}%` }}
@@ -509,7 +517,7 @@ export default function TestPage() {
 
       {/* Soru tipi etiketi */}
       <div className="text-center pt-4">
-        <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
           {currentQuestion.format === "multipleChoice" && "Çoktan Seçmeli"}
           {currentQuestion.format === "written" && "Yazılı"}
           {currentQuestion.format === "trueFalse" && "Doğru / Yanlış"}
@@ -523,7 +531,7 @@ export default function TestPage() {
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 text-center mb-6">
             {currentQuestion.format === "trueFalse" ? (
               <>
-                <p className="text-sm text-gray-400 dark:text-gray-500 mb-3">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   Bu eşleşme doğru mu?
                 </p>
                 <h2 className="text-xl font-bold">

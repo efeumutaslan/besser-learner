@@ -153,7 +153,7 @@ export default function StatsPage() {
                     />
                     <span className="font-medium text-sm">{deck.name}</span>
                   </div>
-                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     {deck.totalCards} kart
                   </span>
                 </div>

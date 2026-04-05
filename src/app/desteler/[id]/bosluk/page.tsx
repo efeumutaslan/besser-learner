@@ -161,7 +161,7 @@ export default function ClozeModePage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
         <p className="text-gray-500 dark:text-gray-400 mb-2 font-medium">Cümle Tamamlama</p>
-        <p className="text-gray-400 dark:text-gray-500 mb-4 text-sm">
+        <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
           Bu destede örnek cümlesi olan kart bulunamadı.
         </p>
         <Button onClick={() => router.push(`/desteler/${deckId}`)}>Geri Dön</Button>
@@ -204,11 +204,18 @@ export default function ClozeModePage() {
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-4 py-3">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push(`/desteler/${deckId}`)} className="p-1">
+          <button onClick={() => router.push(`/desteler/${deckId}`)} aria-label="Geri don" className="p-1">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div
+              role="progressbar"
+              aria-valuenow={Math.round(progress)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Bosluk doldurma ilerlemesi"
+              className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden"
+            >
               <motion.div
                 className="h-full bg-teal-500 rounded-full"
                 animate={{ width: `${progress}%` }}
@@ -238,7 +245,7 @@ export default function ClozeModePage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md md:max-w-lg">
           <div className="text-center mb-2">
-            <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+            <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Cümle Tamamlama
             </span>
           </div>
@@ -253,7 +260,7 @@ export default function ClozeModePage() {
               className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 text-center mb-6"
             >
               {/* Kelime ve çeviri */}
-              <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 {currentQuestion.card.wordTranslation}
               </p>
 
@@ -273,7 +280,7 @@ export default function ClozeModePage() {
 
               {/* Çeviri */}
               {currentQuestion.sentenceTranslation && (
-                <p className="text-sm text-gray-400 dark:text-gray-500 mt-3 italic">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 italic">
                   {currentQuestion.sentenceTranslation}
                 </p>
               )}

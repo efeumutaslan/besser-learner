@@ -40,7 +40,7 @@ export default function BottomNav() {
                   "flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors",
                   isActive
                     ? "text-brand-600"
-                    : "text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                    : "text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300"
                 )}
               >
                 <Icon

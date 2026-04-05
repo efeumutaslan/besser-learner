@@ -326,7 +326,7 @@ export default function LessonComplete({
               />
             </button>
           </div>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">
+          <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-2">
             {cardsStudied} kart &middot; {minutes}dk
           </p>
         </div>

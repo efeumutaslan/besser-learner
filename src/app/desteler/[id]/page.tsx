@@ -624,7 +624,7 @@ export default function DeckDetailPage() {
         </div>
 
         {deck.cards.length === 0 ? (
-          <div className="text-center py-12 text-gray-400 dark:text-gray-500">
+          <div className="text-center py-12 text-gray-500 dark:text-gray-400">
             <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p className="font-medium">Henüz kart eklenmemiş</p>
             <p className="text-sm mt-1">İlk kartınızı ekleyerek başlayın</p>
@@ -712,7 +712,7 @@ export default function DeckDetailPage() {
         <div className="space-y-5 max-h-[70vh] overflow-y-auto pr-1">
           {/* Gunluk Limitler */}
           <div>
-            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Gunluk Limitler</h4>
+            <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Gunluk Limitler</h4>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Yeni kart / gun</label>
@@ -735,7 +735,7 @@ export default function DeckDetailPage() {
 
           {/* Ogrenme Adimlari */}
           <div>
-            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Ogrenme</h4>
+            <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Ogrenme</h4>
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Ogrenme adimlari (dk, virgul ile)</label>
@@ -769,7 +769,7 @@ export default function DeckDetailPage() {
 
           {/* Hatirlamama (Lapse) */}
           <div>
-            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Hatirlamama</h4>
+            <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Hatirlamama</h4>
             <div className="space-y-3">
               <div>
                 <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Tekrar ogrenme adimlari (dk)</label>
@@ -793,7 +793,7 @@ export default function DeckDetailPage() {
 
           {/* Gelismis Ayarlar */}
           <div>
-            <h4 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">Gelismis</h4>
+            <h4 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">Gelismis</h4>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Baslangic kolayligi (%)</label>
