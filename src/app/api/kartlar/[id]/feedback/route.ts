@@ -35,98 +35,98 @@ export async function POST(
       card.correctHits
     );
 
-    // 2. SRS gunde 1 kez uygulanir
+    // 2. SRS + review kaydini transaction icinde atomik yap
+    //    (ayni kart icin ayni gun iki kez SRS uygulanmasini onler)
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const todayFeedbackCount = await db.review.count({
-      where: {
-        cardId: params.id,
-        reviewedAt: { gte: todayStart },
-      },
-    });
-
-    const shouldApplySRS = todayFeedbackCount === 0;
-
-    let srsUpdate: Record<string, unknown> = {};
-
-    if (shouldApplySRS) {
-      // Deck SRS ayarlarini al
-      const deck = await db.deck.findUnique({
-        where: { id: card.deckId },
-      });
-      const settings = parseDeckSettings(deck ?? {});
-
-      if (card.status === "NEW") {
-        if (isCorrect) {
-          // NEW + dogru -> ogrenme adimina al
-          const steps = settings.learningSteps;
-          srsUpdate = {
-            status: "LEARNING",
-            dueDate: new Date(Date.now() + (steps[0] ?? 1) * 60 * 1000),
-            repetitions: 0,
-            interval: 0,
-            learningStep: 0,
-          };
-        }
-        // NEW + yanlis -> SRS degismez, sadece mastery SEEN olur
-      } else {
-        // LEARNING/REVIEW/RELEARN kartlar icin soft SRS rating
-        const rating = isCorrect ? "good" : "again";
-        const result = calculateNextReview(
-          {
-            interval: card.interval,
-            repetitions: card.repetitions,
-            easeFactor: card.easeFactor,
-            lapses: card.lapses,
-            learningStep: card.learningStep,
-          },
-          rating,
-          settings
-        );
-        srsUpdate = {
-          interval: result.interval,
-          repetitions: result.repetitions,
-          easeFactor: result.easeFactor,
-          dueDate: result.dueDate,
-          status: result.status,
-          lapses: result.lapses,
-          learningStep: result.learningStep,
-        };
-      }
-    }
-
-    // Kart guncelle
-    const updatedCard = await db.card.update({
-      where: { id: params.id },
-      data: {
-        mastery: masteryResult.mastery,
-        correctHits: masteryResult.correctHits,
-        ...srsUpdate,
-      },
-    });
-
-    // SRS uygulandiysa review kaydi olustur
-    if (shouldApplySRS && (card.status !== "NEW" || isCorrect)) {
-      await db.review.create({
-        data: {
+    const result = await db.$transaction(async (tx) => {
+      const todayFeedbackCount = await tx.review.count({
+        where: {
           cardId: params.id,
-          quality: isCorrect ? 4 : 0,
-          interval: typeof srsUpdate.interval === "number"
-            ? srsUpdate.interval as number
-            : card.interval,
-          easeFactor: typeof srsUpdate.easeFactor === "number"
-            ? srsUpdate.easeFactor as number
-            : card.easeFactor,
+          reviewedAt: { gte: todayStart },
         },
       });
-    }
+
+      const shouldApplySRS = todayFeedbackCount === 0;
+      let srsUpdate: Record<string, unknown> = {};
+
+      if (shouldApplySRS) {
+        const deck = await tx.deck.findUnique({
+          where: { id: card.deckId },
+        });
+        const settings = parseDeckSettings(deck ?? {});
+
+        if (card.status === "NEW") {
+          if (isCorrect) {
+            const steps = settings.learningSteps;
+            srsUpdate = {
+              status: "LEARNING",
+              dueDate: new Date(Date.now() + (steps[0] ?? 1) * 60 * 1000),
+              repetitions: 0,
+              interval: 0,
+              learningStep: 0,
+            };
+          }
+        } else {
+          const rating = isCorrect ? "good" : "again";
+          const srsResult = calculateNextReview(
+            {
+              interval: card.interval,
+              repetitions: card.repetitions,
+              easeFactor: card.easeFactor,
+              lapses: card.lapses,
+              learningStep: card.learningStep,
+            },
+            rating,
+            settings
+          );
+          srsUpdate = {
+            interval: srsResult.interval,
+            repetitions: srsResult.repetitions,
+            easeFactor: srsResult.easeFactor,
+            dueDate: srsResult.dueDate,
+            status: srsResult.status,
+            lapses: srsResult.lapses,
+            learningStep: srsResult.learningStep,
+          };
+        }
+
+        // Review kaydini transaction icinde olustur
+        if (card.status !== "NEW" || isCorrect) {
+          await tx.review.create({
+            data: {
+              cardId: params.id,
+              quality: isCorrect ? 4 : 0,
+              interval: typeof srsUpdate.interval === "number"
+                ? srsUpdate.interval as number
+                : card.interval,
+              easeFactor: typeof srsUpdate.easeFactor === "number"
+                ? srsUpdate.easeFactor as number
+                : card.easeFactor,
+            },
+          });
+        }
+      }
+
+      // Kart guncelle (mastery + SRS birlikte)
+      const updatedCard = await tx.card.update({
+        where: { id: params.id },
+        data: {
+          mastery: masteryResult.mastery,
+          correctHits: masteryResult.correctHits,
+          ...srsUpdate,
+        },
+      });
+
+      return { updatedCard, shouldApplySRS };
+    });
 
     return NextResponse.json({
-      card: updatedCard,
+      card: result.updatedCard,
       mastery: masteryResult.mastery,
       correctHits: masteryResult.correctHits,
-      srsApplied: shouldApplySRS,
+      srsApplied: result.shouldApplySRS,
     });
   } catch (error: unknown) {
     return handleApiError(error, "Geri bildirim kaydedilemedi");
