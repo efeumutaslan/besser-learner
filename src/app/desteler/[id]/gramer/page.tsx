@@ -233,7 +233,7 @@ export default function GrammarDrillPage() {
 
       {/* Soru */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md md:max-w-lg">
           <div className="text-center mb-2">
             <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Gramer Drill

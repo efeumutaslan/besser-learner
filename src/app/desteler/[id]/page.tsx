@@ -321,8 +321,38 @@ export default function DeckDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full" />
+      <div className="pb-20 animate-pulse">
+        {/* Header skeleton */}
+        <div className="p-4 pt-6 rounded-b-3xl bg-gray-300 dark:bg-gray-700">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-full bg-white/20" />
+            <div className="flex-1 space-y-2">
+              <div className="h-5 w-40 bg-white/20 rounded" />
+              <div className="h-3 w-24 bg-white/10 rounded" />
+            </div>
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-14 rounded-xl bg-white/10" />
+            ))}
+          </div>
+        </div>
+        {/* Study modes skeleton */}
+        <div className="p-4 space-y-3">
+          <div className="h-4 w-28 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700" />
+            ))}
+          </div>
+        </div>
+        {/* Card list skeleton */}
+        <div className="p-4 space-y-2">
+          <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded mb-3" />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-16 rounded-xl bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700" />
+          ))}
+        </div>
       </div>
     );
   }

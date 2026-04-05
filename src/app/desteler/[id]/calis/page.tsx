@@ -234,7 +234,7 @@ export default function StudyPage() {
 
       {/* Kart */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md md:max-w-lg">
           {/* Ön yüz */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 text-center mb-6">
             {currentCard.imageUrl && (
@@ -386,7 +386,7 @@ export default function StudyPage() {
       {/* SRS Butonları */}
       {showAnswer && (
         <div className="bg-white dark:bg-gray-800 border-t dark:border-gray-700 p-4 safe-bottom">
-          <div className="flex gap-2 max-w-md mx-auto">
+          <div className="flex gap-2 max-w-md md:max-w-lg mx-auto">
             <button
               onClick={() => handleRating("again")}
               disabled={reviewing}

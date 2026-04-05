@@ -320,7 +320,7 @@ export default function TestPage() {
           <h1 className="font-bold text-lg">Test Ayarları</h1>
         </div>
 
-        <div className="p-4 space-y-6 max-w-md mx-auto">
+        <div className="p-4 space-y-6 max-w-md md:max-w-lg mx-auto">
           {/* Soru sayısı */}
           <div>
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 block">
@@ -518,7 +518,7 @@ export default function TestPage() {
 
       {/* İçerik */}
       <div className="flex-1 flex flex-col items-center justify-center p-6">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md md:max-w-lg">
           {/* Soru */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 text-center mb-6">
             {currentQuestion.format === "trueFalse" ? (

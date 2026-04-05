@@ -259,7 +259,7 @@ export default function BlastPage() {
           </h1>
         </div>
 
-        <div className="p-6 space-y-8 max-w-md mx-auto mt-8">
+        <div className="p-6 space-y-8 max-w-md md:max-w-lg mx-auto mt-8">
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-2">Hazır mısın?</h2>
             <p className="text-gray-400 text-sm">
