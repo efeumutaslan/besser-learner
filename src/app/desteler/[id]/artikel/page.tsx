@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { cn, getArtikelBadgeColor, getArtikelColor, shuffle } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import LessonComplete from "@/components/LessonComplete";
-import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Type } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Card {
@@ -110,11 +110,14 @@ export default function ArtikelDrillPage() {
   if (questions.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <p className="text-gray-500 dark:text-gray-400 mb-2 font-medium">Artikel Drill</p>
-        <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
-          Bu destede artikeli olan (der/die/das) kart bulunamadı.
+        <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mb-4">
+          <Type className="w-8 h-8 text-indigo-500" />
+        </div>
+        <p className="text-gray-800 dark:text-gray-200 mb-2 font-semibold text-lg">Artikel Drill</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm max-w-xs">
+          Bu destede artikeli olan (der/die/das) kart bulunamadi. Kartlara artikel ekleyerek baslayabilirsin.
         </p>
-        <Button onClick={() => router.push(`/desteler/${deckId}`)}>Geri Dön</Button>
+        <Button onClick={() => router.push(`/desteler/${deckId}`)}>Geri Don</Button>
       </div>
     );
   }

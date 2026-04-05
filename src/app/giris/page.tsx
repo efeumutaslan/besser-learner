@@ -36,7 +36,7 @@ export default function LoginPage() {
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Almanca Ogrenme Asistanin</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 dark:border dark:border-gray-700 rounded-3xl shadow-lg p-6 space-y-4">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white text-center">Giris Yap</h2>
 
           {error && (

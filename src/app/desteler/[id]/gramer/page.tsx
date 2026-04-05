@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { cn, shuffle } from "@/lib/utils";
 import Button from "@/components/ui/Button";
 import LessonComplete from "@/components/LessonComplete";
-import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, GraduationCap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Card {
@@ -161,9 +161,12 @@ export default function GrammarDrillPage() {
   if (questions.length === 0) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center">
-        <p className="text-gray-500 dark:text-gray-400 mb-2 font-medium">Gramer Drill</p>
-        <p className="text-gray-500 dark:text-gray-400 mb-4 text-sm">
-          Bu destede hal eki (Nominativ/Akkusativ/Dativ) bilgisi olan kart bulunamadi.
+        <div className="w-16 h-16 rounded-2xl bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center mb-4">
+          <GraduationCap className="w-8 h-8 text-violet-500" />
+        </div>
+        <p className="text-gray-800 dark:text-gray-200 mb-2 font-semibold text-lg">Gramer Drill</p>
+        <p className="text-gray-500 dark:text-gray-400 mb-6 text-sm max-w-xs">
+          Bu destede hal eki (Nominativ/Akkusativ/Dativ) bilgisi olan kart bulunamadi. Kartlara hal eki ekleyerek baslayabilirsin.
         </p>
         <Button onClick={() => router.push(`/desteler/${deckId}`)}>Geri Don</Button>
       </div>

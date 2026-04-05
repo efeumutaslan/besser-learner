@@ -244,7 +244,7 @@ export default function StudyPage() {
       <div className="flex-1 flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md md:max-w-lg">
           {/* Ön yüz */}
-          <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 text-center mb-6">
+          <div className="bg-white dark:bg-gray-700/60 dark:border dark:border-gray-600 rounded-3xl shadow-lg p-8 text-center mb-6">
             {currentCard.imageUrl && (
               <div className="mb-4">
                 <img
@@ -283,13 +283,13 @@ export default function StudyPage() {
               <span
                 className={cn(
                   "text-[10px] px-2 py-0.5 rounded-full font-medium",
-                  currentCard.status === "NEW" && "bg-blue-100 text-blue-700",
+                  currentCard.status === "NEW" && "bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300",
                   currentCard.status === "LEARNING" &&
-                    "bg-orange-100 text-orange-700",
+                    "bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300",
                   currentCard.status === "REVIEW" &&
-                    "bg-green-100 text-green-700",
+                    "bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300",
                   currentCard.status === "RELEARN" &&
-                    "bg-red-100 text-red-700"
+                    "bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300"
                 )}
               >
                 {currentCard.status === "NEW" && "Yeni"}
@@ -302,7 +302,7 @@ export default function StudyPage() {
 
           {/* Arka yüz - Çeviri ve detaylar */}
           {showAnswer ? (
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-8 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="bg-white dark:bg-gray-700/60 dark:border dark:border-gray-600 rounded-3xl shadow-lg p-8 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
               <div className="text-center">
                 <p className={cn(
                   "text-xl font-bold text-gray-800 dark:text-gray-100",

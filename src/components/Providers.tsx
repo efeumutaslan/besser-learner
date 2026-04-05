@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ToastProvider, useToast } from "@/context/ToastContext";
 
 function SWManager() {
   const { toast } = useToast();
+  const pathname = usePathname();
   const [showUpdate, setShowUpdate] = useState(false);
 
   const handleMessage = useCallback(
@@ -41,7 +43,8 @@ function SWManager() {
     };
   }, [handleMessage]);
 
-  if (!showUpdate) return null;
+  const isAuthPage = pathname === "/giris" || pathname === "/kayit";
+  if (!showUpdate || isAuthPage) return null;
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-[9998] flex justify-center">
