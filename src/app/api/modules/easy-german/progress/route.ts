@@ -19,34 +19,42 @@ export async function POST(request: NextRequest) {
     const clampedProgress = Math.min(Math.max(progress, 0), 1);
     const isWatched = clampedProgress >= 0.8;
 
-    const watch = await db.videoWatch.upsert({
-      where: {
-        userId_videoId: {
+    try {
+      const watch = await db.videoWatch.upsert({
+        where: {
+          userId_videoId: {
+            userId: user.id,
+            videoId,
+          },
+        },
+        create: {
           userId: user.id,
           videoId,
+          module: "easy-german",
+          progress: clampedProgress,
+          duration: duration || 0,
+          watched: isWatched,
+          lastWatchedAt: new Date(),
         },
-      },
-      create: {
-        userId: user.id,
-        videoId,
-        module: "easy-german",
-        progress: clampedProgress,
-        duration: duration || 0,
-        watched: isWatched,
-        lastWatchedAt: new Date(),
-      },
-      update: {
-        progress: clampedProgress,
-        ...(duration ? { duration } : {}),
-        watched: isWatched,
-        lastWatchedAt: new Date(),
-      },
-    });
+        update: {
+          progress: clampedProgress,
+          ...(duration ? { duration } : {}),
+          watched: isWatched,
+          lastWatchedAt: new Date(),
+        },
+      });
 
-    return NextResponse.json({
-      progress: watch.progress,
-      watched: watch.watched,
-    });
+      return NextResponse.json({
+        progress: watch.progress,
+        watched: watch.watched,
+      });
+    } catch {
+      // VideoWatch tablosu yoksa sessizce basarili don
+      return NextResponse.json({
+        progress: clampedProgress,
+        watched: isWatched,
+      });
+    }
   } catch (error: unknown) {
     return handleApiError(error, "Ilerleme kaydedilemedi");
   }

@@ -96,10 +96,15 @@ export async function fetchFreshVideos(): Promise<EasyGermanVideo[]> {
   }
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
     const res = await fetch(RSS_URL, {
-      next: { revalidate: 300 },
-      signal: AbortSignal.timeout(5000),
+      signal: controller.signal,
+      cache: "no-store",
     });
+
+    clearTimeout(timeout);
 
     if (!res.ok) throw new Error(`RSS fetch failed: ${res.status}`);
 

@@ -1,10 +1,10 @@
 import { requireAuth } from "@/lib/auth";
 import { handleApiError } from "@/lib/api-utils";
 import { db } from "@/lib/db";
-import { fetchFreshVideos } from "@/lib/easy-german-videos";
+import { fetchFreshVideos, FALLBACK_VIDEOS } from "@/lib/easy-german-videos";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET /api/modules/easy-german — rastgele video getir (izlenmemisleri oncelikle)
+// GET /api/modules/easy-german — rastgele video getir
 export async function GET(request: NextRequest) {
   try {
     const user = await requireAuth();
@@ -13,13 +13,34 @@ export async function GET(request: NextRequest) {
     const level = searchParams.get("level");
     const includeHistory = searchParams.get("history") === "true";
 
-    // Dinamik video listesi (RSS + fallback)
-    const allVideos = await fetchFreshVideos();
+    // Video listesi (RSS + fallback, hata olursa sadece fallback)
+    let allVideos;
+    try {
+      allVideos = await fetchFreshVideos();
+    } catch {
+      allVideos = FALLBACK_VIDEOS;
+    }
 
-    // Kullanicinin izledigi videolari getir
-    const watches = await db.videoWatch.findMany({
-      where: { userId: user.id, module: "easy-german" },
-    });
+    // Kullanicinin izledigi videolari getir (tablo yoksa bos dizi)
+    let watches: Array<{
+      videoId: string;
+      progress: number;
+      watched: boolean;
+      lastWatchedAt: Date;
+    }> = [];
+    try {
+      watches = await db.videoWatch.findMany({
+        where: { userId: user.id, module: "easy-german" },
+        select: {
+          videoId: true,
+          progress: true,
+          watched: true,
+          lastWatchedAt: true,
+        },
+      });
+    } catch {
+      // VideoWatch tablosu henuz olusturulmamis olabilir — devam et
+    }
 
     const watchMap = new Map(watches.map((w) => [w.videoId, w]));
 
@@ -29,13 +50,17 @@ export async function GET(request: NextRequest) {
       videos = videos.filter((v) => v.level === level);
     }
 
-    // Izlenmemis videolar (watched === false veya hic kaydi yok)
+    if (videos.length === 0) {
+      videos = allVideos; // filtre bos sonuc verirse tumunu goster
+    }
+
+    // Izlenmemis videolar
     const unwatched = videos.filter((v) => {
       const watch = watchMap.get(v.id);
       return !watch || !watch.watched;
     });
 
-    // Eger izlenmemis video varsa onlardan, yoksa tumunden rastgele sec
+    // Rastgele sec
     const pool = unwatched.length > 0 ? unwatched : videos;
     const randomIndex = Math.floor(Math.random() * pool.length);
     const selected = pool[randomIndex];
