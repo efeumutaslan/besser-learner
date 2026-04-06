@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 import Button from "@/components/ui/Button";
@@ -16,6 +16,7 @@ import {
   ChevronUp,
   Loader2,
   Filter,
+  ThumbsUp,
 } from "lucide-react";
 
 interface VideoData {
@@ -37,12 +38,6 @@ interface VideoStats {
 
 interface HistoryItem extends VideoData {}
 
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
   return d.toLocaleDateString("tr-TR", {
@@ -62,11 +57,7 @@ export default function EasyGermanPage() {
   const [rerolling, setRerolling] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
-  const [playerReady, setPlayerReady] = useState(false);
-  const playerRef = useRef<YT.Player | null>(null);
-  const playerReadyRef = useRef(false); // player onReady fired
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [marking, setMarking] = useState(false);
 
   const fetchVideo = useCallback(
     async (withHistory = false) => {
@@ -95,153 +86,48 @@ export default function EasyGermanPage() {
     fetchVideo(true).finally(() => setLoading(false));
   }, [fetchVideo]);
 
-  // YouTube IFrame API yükle
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // API zaten yukluyse tekrar yukleme
-    if (window.YT && window.YT.Player) {
-      setPlayerReady(true);
-      return;
-    }
-
-    const tag = document.createElement("script");
-    tag.src = "https://www.youtube.com/iframe_api";
-    document.head.appendChild(tag);
-
-    (window as unknown as Record<string, unknown>).onYouTubeIframeAPIReady =
-      () => {
-        setPlayerReady(true);
-      };
-
-    return () => {
-      (
-        window as unknown as Record<string, unknown>
-      ).onYouTubeIframeAPIReady = undefined;
-    };
-  }, []);
-
-  // Player olustur / guncelle
-  useEffect(() => {
-    if (!playerReady || !video) return;
-
-    // Onceki interval'i temizle
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-
-    // Player varsa ve hazirsa video degistir
-    if (playerRef.current && playerReadyRef.current) {
-      playerRef.current.loadVideoById(video.id);
-      return;
-    }
-
-    // Onceki player'i yok et (hazir degilse)
-    if (playerRef.current) {
-      try { playerRef.current.destroy(); } catch { /* */ }
-      playerRef.current = null;
-      playerReadyRef.current = false;
-    }
-
-    // Yeni player olustur
-    playerRef.current = new window.YT.Player("yt-player", {
-      videoId: video.id,
-      playerVars: {
-        rel: 0,
-        modestbranding: 1,
-        cc_load_policy: 1, // altyazi acik
-        hl: "de",
-      },
-      events: {
-        onReady: () => {
-          playerReadyRef.current = true;
-        },
-        onStateChange: (event: YT.OnStateChangeEvent) => {
-          if (event.data === window.YT.PlayerState.PLAYING) {
-            startTracking();
-          } else if (
-            event.data === window.YT.PlayerState.PAUSED ||
-            event.data === window.YT.PlayerState.ENDED
-          ) {
-            stopTracking();
-            saveProgress();
-          }
-        },
-      },
-    });
-  }, [playerReady, video?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const startTracking = () => {
-    if (intervalRef.current) return;
-    intervalRef.current = setInterval(() => {
-      saveProgress();
-    }, 10000); // her 10 saniyede bir kaydet
+  const handleReroll = async () => {
+    setRerolling(true);
+    await fetchVideo(false);
+    setRerolling(false);
   };
 
-  const stopTracking = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
-
-  const saveProgress = async () => {
-    if (!playerRef.current || !video) return;
-
+  const handleMarkWatched = async () => {
+    if (!video) return;
+    setMarking(true);
     try {
-      const currentTime = playerRef.current.getCurrentTime();
-      const duration = playerRef.current.getDuration();
-      if (!duration || duration === 0) return;
-
-      const progress = currentTime / duration;
-
       await fetch("/api/modules/easy-german/progress", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           videoId: video.id,
-          progress,
-          duration: Math.round(duration),
+          progress: 1,
+          duration: video.duration || 600,
         }),
       });
-
-      // Lokal state guncelle
-      setVideo((prev) =>
-        prev
-          ? { ...prev, progress, watched: progress >= 0.8 }
-          : null
-      );
+      setVideo((prev) => (prev ? { ...prev, progress: 1, watched: true } : null));
+      if (stats) {
+        setStats({
+          ...stats,
+          watched: stats.watched + 1,
+          remaining: Math.max(0, stats.remaining - 1),
+        });
+      }
     } catch {
-      // sessiz hata
+      // sessiz
+    } finally {
+      setMarking(false);
     }
-  };
-
-  const handleReroll = async () => {
-    setRerolling(true);
-    stopTracking();
-    // Mevcut progress'i kaydet
-    await saveProgress();
-    await fetchVideo(false);
-    setRerolling(false);
   };
 
   const handleLevelFilter = (level: string | null) => {
     setSelectedLevel(level);
-    stopTracking();
   };
 
   const handleSelectFromHistory = (historyVideo: HistoryItem) => {
     setVideo(historyVideo);
     setShowHistory(false);
   };
-
-  // Cleanup
-  useEffect(() => {
-    return () => {
-      stopTracking();
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -263,7 +149,7 @@ export default function EasyGermanPage() {
       <div className="bg-gradient-to-br from-orange-500 to-amber-600 text-white p-4 rounded-b-3xl">
         <div className="flex items-center gap-3 mb-3">
           <button
-            onClick={() => router.push("/market")}
+            onClick={() => router.back()}
             className="p-1.5 rounded-lg hover:bg-white/15 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -332,15 +218,15 @@ export default function EasyGermanPage() {
       {video && (
         <div className="px-4 pt-3">
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            {/* YouTube Embed */}
-            <div
-              ref={containerRef}
-              className="relative w-full"
-              style={{ paddingBottom: "56.25%" }}
-            >
-              <div
-                id="yt-player"
+            {/* YouTube Embed — key ile video degisince iframe yenilenir */}
+            <div className="relative w-full" style={{ paddingBottom: "56.25%" }}>
+              <iframe
+                key={video.id}
+                src={`https://www.youtube.com/embed/${video.id}?rel=0&modestbranding=1&cc_load_policy=1&hl=de`}
                 className="absolute inset-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title={video.title}
               />
             </div>
 
@@ -370,9 +256,6 @@ export default function EasyGermanPage() {
                     <span className="text-[10px] text-gray-500 dark:text-gray-400">
                       {video.topic}
                     </span>
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                      {formatDuration(video.duration)}
-                    </span>
                   </div>
                 </div>
                 {video.watched && (
@@ -383,50 +266,38 @@ export default function EasyGermanPage() {
                 )}
               </div>
 
-              {/* Progress Bar */}
-              {video.progress > 0 && (
-                <div className="mt-2">
-                  <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 mb-1">
-                    <span>Ilerleme</span>
-                    <span>{Math.round(video.progress * 100)}%</span>
-                  </div>
-                  <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all duration-300",
-                        video.watched
-                          ? "bg-emerald-500"
-                          : "bg-orange-500"
-                      )}
-                      style={{
-                        width: `${Math.round(video.progress * 100)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
-
               {/* Gecmiste izlendi uyarisi */}
               {video.watched && video.lastWatchedAt && (
-                <div className="mt-3 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-xl">
+                <div className="mt-2 flex items-center gap-2 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-2 rounded-xl">
                   <Eye className="w-3.5 h-3.5 text-emerald-500" />
                   <span className="text-xs text-emerald-700 dark:text-emerald-400">
-                    Bu videoyu {formatDate(video.lastWatchedAt)} tarihinde
-                    izledin
+                    Bu videoyu {formatDate(video.lastWatchedAt)} tarihinde izledin
                   </span>
                 </div>
               )}
 
-              {/* Reroll Butonu */}
-              <Button
-                onClick={handleReroll}
-                loading={rerolling}
-                variant="secondary"
-                className="w-full mt-3 gap-2"
-              >
-                <Shuffle className="w-4 h-4" />
-                Baska Video Getir
-              </Button>
+              {/* Butonlar */}
+              <div className="flex gap-2 mt-3">
+                {!video.watched && (
+                  <Button
+                    onClick={handleMarkWatched}
+                    loading={marking}
+                    className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <ThumbsUp className="w-4 h-4" />
+                    Izledim
+                  </Button>
+                )}
+                <Button
+                  onClick={handleReroll}
+                  loading={rerolling}
+                  variant="secondary"
+                  className={cn("gap-2", video.watched ? "flex-1" : "")}
+                >
+                  <Shuffle className="w-4 h-4" />
+                  Baska Video
+                </Button>
+              </div>
             </div>
           </div>
         </div>
