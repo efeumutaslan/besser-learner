@@ -1,33 +1,56 @@
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
 import { handleApiError } from "@/lib/api-utils";
-import { calculateSimpleStats } from "@/lib/deck-stats";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET - Tüm desteleri getir
+// GET - Tüm desteleri getir (optimized: groupBy ile kart sayimi)
 export async function GET() {
   try {
     const user = await requireAuth();
+    const now = new Date();
 
-    const decks = await db.deck.findMany({
-      where: { userId: user.id },
-      include: {
-        _count: {
-          select: { cards: true },
+    // Paralel: desteler + kart istatistikleri
+    const [decks, cardStats] = await Promise.all([
+      db.deck.findMany({
+        where: { userId: user.id },
+        include: { _count: { select: { cards: true } } },
+        orderBy: { createdAt: "desc" },
+      }),
+      // Tum kartlarin status dagilimini tek sorguda al
+      db.card.groupBy({
+        by: ["deckId", "status"],
+        where: {
+          deck: { userId: user.id },
         },
-        cards: {
-          select: {
-            id: true,
-            status: true,
-            dueDate: true,
-          },
-        },
+        _count: true,
+      }),
+    ]);
+
+    // Due kartlari ayri say (dueDate filtresi groupBy'da zor)
+    const dueCounts = await db.card.groupBy({
+      by: ["deckId"],
+      where: {
+        deck: { userId: user.id },
+        status: { in: ["LEARNING", "RELEARN", "REVIEW"] },
+        dueDate: { lte: now },
       },
-      orderBy: { createdAt: "desc" },
+      _count: true,
     });
 
+    // Lookup map'ler olustur
+    const statsMap = new Map<string, { newCount: number; learningCount: number; reviewCount: number }>();
+    for (const stat of cardStats) {
+      const existing = statsMap.get(stat.deckId) || { newCount: 0, learningCount: 0, reviewCount: 0 };
+      if (stat.status === "NEW") existing.newCount = stat._count;
+      else if (stat.status === "LEARNING" || stat.status === "RELEARN") existing.learningCount += stat._count;
+      else if (stat.status === "REVIEW") existing.reviewCount = stat._count;
+      statsMap.set(stat.deckId, existing);
+    }
+
+    const dueMap = new Map(dueCounts.map((d) => [d.deckId, d._count]));
+
     const result = decks.map((deck) => {
-      const stats = calculateSimpleStats(deck.cards);
+      const stats = statsMap.get(deck.id) || { newCount: 0, learningCount: 0, reviewCount: 0 };
       return {
         id: deck.id,
         name: deck.name,
@@ -36,7 +59,10 @@ export async function GET() {
         newPerDay: deck.newPerDay,
         reviewPerDay: deck.reviewPerDay,
         totalCards: deck._count.cards,
-        ...stats,
+        newCount: stats.newCount,
+        learningCount: stats.learningCount,
+        reviewCount: stats.reviewCount,
+        dueCount: dueMap.get(deck.id) || 0,
         createdAt: deck.createdAt,
       };
     });

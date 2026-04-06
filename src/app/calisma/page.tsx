@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
-import { GraduationCap, Play, BookOpen } from "lucide-react";
+import { GraduationCap, Play, BookOpen, Headphones } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -131,6 +131,28 @@ export default function StudyOverviewPage() {
             })}
           </>
         )}
+
+        {/* Moduller */}
+        <div className="pt-4">
+          <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-3">
+            MODÜLLER
+          </h3>
+          <button
+            onClick={() => router.push("/modules/easy-german")}
+            className="w-full flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 hover:shadow-md hover:border-orange-300 dark:hover:border-orange-700 transition-all text-left"
+          >
+            <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
+              <Headphones className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100">Easy German</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Hören — YouTube videolariyla dinleme calismasi
+              </p>
+            </div>
+            <Play className="w-5 h-5 text-orange-500" />
+          </button>
+        </div>
 
         {/* Tüm destelerde pratik yapma */}
         {decks.length > 0 && decks.some((d) => d.totalCards > 0) && (

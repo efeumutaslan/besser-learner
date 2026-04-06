@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/auth";
 import { handleApiError } from "@/lib/api-utils";
 import { db } from "@/lib/db";
-import { EASY_GERMAN_VIDEOS } from "@/lib/easy-german-videos";
+import { fetchFreshVideos } from "@/lib/easy-german-videos";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/modules/easy-german — rastgele video getir (izlenmemisleri oncelikle)
@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
     const level = searchParams.get("level");
     const includeHistory = searchParams.get("history") === "true";
 
+    // Dinamik video listesi (RSS + fallback)
+    const allVideos = await fetchFreshVideos();
+
     // Kullanicinin izledigi videolari getir
     const watches = await db.videoWatch.findMany({
       where: { userId: user.id, module: "easy-german" },
@@ -21,7 +24,7 @@ export async function GET(request: NextRequest) {
     const watchMap = new Map(watches.map((w) => [w.videoId, w]));
 
     // Seviye filtresi
-    let videos = EASY_GERMAN_VIDEOS;
+    let videos = allVideos;
     if (level) {
       videos = videos.filter((v) => v.level === level);
     }
@@ -36,6 +39,13 @@ export async function GET(request: NextRequest) {
     const pool = unwatched.length > 0 ? unwatched : videos;
     const randomIndex = Math.floor(Math.random() * pool.length);
     const selected = pool[randomIndex];
+
+    if (!selected) {
+      return NextResponse.json(
+        { error: "Video bulunamadi" },
+        { status: 404 }
+      );
+    }
 
     const watch = watchMap.get(selected.id);
 
