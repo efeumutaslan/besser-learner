@@ -64,6 +64,7 @@ export default function EasyGermanPage() {
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [playerReady, setPlayerReady] = useState(false);
   const playerRef = useRef<YT.Player | null>(null);
+  const playerReadyRef = useRef(false); // player onReady fired
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -130,10 +131,17 @@ export default function EasyGermanPage() {
       intervalRef.current = null;
     }
 
-    // Player varsa video degistir
-    if (playerRef.current) {
+    // Player varsa ve hazirsa video degistir
+    if (playerRef.current && playerReadyRef.current) {
       playerRef.current.loadVideoById(video.id);
       return;
+    }
+
+    // Onceki player'i yok et (hazir degilse)
+    if (playerRef.current) {
+      try { playerRef.current.destroy(); } catch { /* */ }
+      playerRef.current = null;
+      playerReadyRef.current = false;
     }
 
     // Yeni player olustur
@@ -146,8 +154,10 @@ export default function EasyGermanPage() {
         hl: "de",
       },
       events: {
+        onReady: () => {
+          playerReadyRef.current = true;
+        },
         onStateChange: (event: YT.OnStateChangeEvent) => {
-          // Video oynatilmaya basladiginda progress tracking baslat
           if (event.data === window.YT.PlayerState.PLAYING) {
             startTracking();
           } else if (

@@ -19,11 +19,12 @@ model User {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  decks         Deck[]
-  studySessions StudySession[]
-  userStats     UserStats?
-  dailyActivity DailyActivity[]
-  videoWatches  VideoWatch[]
+  decks            Deck[]
+  studySessions    StudySession[]
+  userStats        UserStats?
+  dailyActivity    DailyActivity[]
+  videoWatches     VideoWatch[]
+  installedModules InstalledModule[]
 }
 
 
@@ -184,4 +185,15 @@ model VideoWatch {
 
   @@unique([userId, videoId])
   @@index([userId, module])
+}
+
+model InstalledModule {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moduleId  String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, moduleId])
+  @@index([userId])
 }

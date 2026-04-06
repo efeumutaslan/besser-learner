@@ -13,8 +13,9 @@ import {
   BookOpen,
   Loader2,
   Headphones,
-  Play,
+  Trash2,
   Puzzle,
+  Plus,
 } from "lucide-react";
 
 interface Category {
@@ -69,6 +70,10 @@ export default function MarketPage() {
   const [installing, setInstalling] = useState<string | null>(null);
   const [installed, setInstalled] = useState<Set<string>>(new Set());
 
+  // Modul state
+  const [installedModules, setInstalledModules] = useState<Set<string>>(new Set());
+  const [moduleLoading, setModuleLoading] = useState<string | null>(null);
+
   const fetchMarket = useCallback(async () => {
     try {
       setLoading(true);
@@ -90,11 +95,25 @@ export default function MarketPage() {
     }
   }, [selectedCategory, searchQuery]);
 
+  const fetchInstalledModules = useCallback(async () => {
+    try {
+      const res = await fetch("/api/modules/install");
+      if (res.ok) {
+        const data = await res.json();
+        setInstalledModules(new Set(data.modules || []));
+      }
+    } catch {
+      // sessiz
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === "desteler") {
       fetchMarket();
+    } else {
+      fetchInstalledModules();
     }
-  }, [fetchMarket, activeTab]);
+  }, [fetchMarket, fetchInstalledModules, activeTab]);
 
   const handleInstall = async (deck: MarketDeck) => {
     setInstalling(deck.id);
@@ -112,6 +131,46 @@ export default function MarketPage() {
       // sessiz hata
     } finally {
       setInstalling(null);
+    }
+  };
+
+  const handleModuleInstall = async (moduleId: string) => {
+    setModuleLoading(moduleId);
+    try {
+      const res = await fetch("/api/modules/install", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleId }),
+      });
+      if (res.ok) {
+        setInstalledModules((prev) => new Set(prev).add(moduleId));
+      }
+    } catch {
+      // sessiz
+    } finally {
+      setModuleLoading(null);
+    }
+  };
+
+  const handleModuleUninstall = async (moduleId: string) => {
+    setModuleLoading(moduleId);
+    try {
+      const res = await fetch("/api/modules/install", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ moduleId }),
+      });
+      if (res.ok) {
+        setInstalledModules((prev) => {
+          const next = new Set(prev);
+          next.delete(moduleId);
+          return next;
+        });
+      }
+    } catch {
+      // sessiz
+    } finally {
+      setModuleLoading(null);
     }
   };
 
@@ -184,7 +243,6 @@ export default function MarketPage() {
       {/* Desteler Tab */}
       {activeTab === "desteler" && (
         <>
-          {/* Kategoriler */}
           {categories.length > 0 && (
             <div className="px-4 pt-4">
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -217,7 +275,6 @@ export default function MarketPage() {
             </div>
           )}
 
-          {/* Deste Listesi */}
           <div className="p-4">
             {loading ? (
               <div className="flex flex-col items-center justify-center py-16">
@@ -316,40 +373,65 @@ export default function MarketPage() {
       {activeTab === "moduller" && (
         <div className="p-4">
           <div className="space-y-3">
-            {MODULES.map((mod) => (
-              <button
-                key={mod.id}
-                onClick={() => router.push(mod.route)}
-                className="w-full text-left bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-all hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-700 active:scale-[0.99]"
-              >
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
-                    <Headphones className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-1">
+            {MODULES.map((mod) => {
+              const isInstalled = installedModules.has(mod.id);
+              const isLoading = moduleLoading === mod.id;
+
+              return (
+                <div
+                  key={mod.id}
+                  className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-all"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
+                      <Headphones className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                         {mod.name}
                       </h3>
-                      <Play className="w-5 h-5 text-emerald-500" />
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                        {mod.description}
+                      </p>
+                      <div className="flex gap-1 mt-2 flex-wrap">
+                        {mod.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="px-2 py-0.5 bg-orange-50 dark:bg-orange-900/20 rounded-full text-[10px] text-orange-600 dark:text-orange-400 font-medium"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
-                      {mod.description}
-                    </p>
-                    <div className="flex gap-1 mt-2 flex-wrap">
-                      {mod.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 bg-orange-50 dark:bg-orange-900/20 rounded-full text-[10px] text-orange-600 dark:text-orange-400 font-medium"
+                    <div className="ml-2 flex-shrink-0">
+                      {isInstalled ? (
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleModuleUninstall(mod.id)}
+                          loading={isLoading}
+                          className="gap-1"
                         >
-                          {tag}
-                        </span>
-                      ))}
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Kaldir
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          onClick={() => handleModuleInstall(mod.id)}
+                          loading={isLoading}
+                          className="gap-1 bg-orange-500 hover:bg-orange-600"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Ekle
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
 
           <div className="text-center mt-8 py-8">
