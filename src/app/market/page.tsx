@@ -12,7 +12,9 @@ import {
   CheckCircle2,
   BookOpen,
   Loader2,
-  ArrowLeft,
+  Headphones,
+  Play,
+  Puzzle,
 } from "lucide-react";
 
 interface Category {
@@ -32,8 +34,32 @@ interface MarketDeck {
   tags?: string[];
 }
 
+interface Module {
+  id: string;
+  name: string;
+  description: string;
+  icon: "headphones";
+  route: string;
+  tags: string[];
+}
+
+const MODULES: Module[] = [
+  {
+    id: "easy-german",
+    name: "Easy German",
+    description:
+      "Easy German YouTube kanalindan rastgele videolar izle. Dinleme becerini gelistir, Almanca konusmalari anla.",
+    icon: "headphones",
+    route: "/modules/easy-german",
+    tags: ["Hören", "YouTube", "A1-B2"],
+  },
+];
+
+type Tab = "desteler" | "moduller";
+
 export default function MarketPage() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<Tab>("desteler");
   const [categories, setCategories] = useState<Category[]>([]);
   const [decks, setDecks] = useState<MarketDeck[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,8 +91,10 @@ export default function MarketPage() {
   }, [selectedCategory, searchQuery]);
 
   useEffect(() => {
-    fetchMarket();
-  }, [fetchMarket]);
+    if (activeTab === "desteler") {
+      fetchMarket();
+    }
+  }, [fetchMarket, activeTab]);
 
   const handleInstall = async (deck: MarketDeck) => {
     setInstalling(deck.id);
@@ -103,151 +131,235 @@ export default function MarketPage() {
         <div className="flex items-center gap-3 mb-4">
           <Store className="w-7 h-7" />
           <div>
-            <h1 className="text-2xl font-bold">Deste Marketi</h1>
+            <h1 className="text-2xl font-bold">Market</h1>
             <p className="text-emerald-200 text-sm">
-              Hazir desteleri kesfet ve indir
+              Desteler ve moduller
             </p>
           </div>
         </div>
 
-        {/* Arama */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-300" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Deste ara..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/15 text-white placeholder-emerald-200 text-sm focus:outline-none focus:bg-white/25 transition-colors"
-          />
+        {/* Tabs */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setActiveTab("desteler")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
+              activeTab === "desteler"
+                ? "bg-white/25 text-white"
+                : "bg-white/10 text-emerald-200 hover:bg-white/15"
+            )}
+          >
+            <BookOpen className="w-4 h-4" />
+            Desteler
+          </button>
+          <button
+            onClick={() => setActiveTab("moduller")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all",
+              activeTab === "moduller"
+                ? "bg-white/25 text-white"
+                : "bg-white/10 text-emerald-200 hover:bg-white/15"
+            )}
+          >
+            <Puzzle className="w-4 h-4" />
+            Moduller
+          </button>
         </div>
-      </div>
 
-      {/* Kategoriler */}
-      {categories.length > 0 && (
-        <div className="px-4 pt-4">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
-                !selectedCategory
-                  ? "bg-emerald-600 text-white"
-                  : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
-              )}
-            >
-              Tumu
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={cn(
-                  "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
-                  selectedCategory === cat.id
-                    ? "bg-emerald-600 text-white"
-                    : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
-                )}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Icerik */}
-      <div className="p-4">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mb-3" />
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Desteler yukleniyor...
-            </p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-16">
-            <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
-            <Button onClick={fetchMarket} variant="secondary">
-              Tekrar Dene
-            </Button>
-          </div>
-        ) : decks.length === 0 ? (
-          <div className="text-center py-16">
-            <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-            <p className="text-gray-500 dark:text-gray-400 font-medium">
-              {searchQuery
-                ? "Aramaniza uygun deste bulunamadi"
-                : "Henuz deste eklenmemis"}
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {decks.map((deck) => {
-              const isInstalled = installed.has(deck.id);
-              const isInstalling = installing === deck.id;
-
-              return (
-                <div
-                  key={deck.id}
-                  className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-all"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold">
-                          {CATEGORY_ICONS[deck.category] || deck.category.charAt(0).toUpperCase()}
-                        </span>
-                        <div>
-                          <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
-                            {deck.name}
-                          </h3>
-                          <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                            {deck.author} · {deck.cardCount} kart
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
-                        {deck.description}
-                      </p>
-                      {deck.tags && deck.tags.length > 0 && (
-                        <div className="flex gap-1 mt-2 flex-wrap">
-                          {deck.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full text-[10px] text-gray-500 dark:text-gray-400"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <div className="ml-3">
-                      {isInstalled ? (
-                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                          <CheckCircle2 className="w-5 h-5" />
-                          <span className="text-xs font-medium">Yuklendi</span>
-                        </div>
-                      ) : (
-                        <Button
-                          size="sm"
-                          onClick={() => handleInstall(deck)}
-                          loading={isInstalling}
-                          className="gap-1 bg-emerald-600 hover:bg-emerald-700"
-                        >
-                          <Download className="w-4 h-4" />
-                          Indir
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+        {/* Arama - sadece desteler tabinda */}
+        {activeTab === "desteler" && (
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-300" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Deste ara..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white/15 text-white placeholder-emerald-200 text-sm focus:outline-none focus:bg-white/25 transition-colors"
+            />
           </div>
         )}
       </div>
+
+      {/* Desteler Tab */}
+      {activeTab === "desteler" && (
+        <>
+          {/* Kategoriler */}
+          {categories.length > 0 && (
+            <div className="px-4 pt-4">
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <button
+                  onClick={() => setSelectedCategory(null)}
+                  className={cn(
+                    "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                    !selectedCategory
+                      ? "bg-emerald-600 text-white"
+                      : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+                  )}
+                >
+                  Tumu
+                </button>
+                {categories.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={cn(
+                      "px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all",
+                      selectedCategory === cat.id
+                        ? "bg-emerald-600 text-white"
+                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300"
+                    )}
+                  >
+                    {cat.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Deste Listesi */}
+          <div className="p-4">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-emerald-500 mb-3" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Desteler yukleniyor...
+                </p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-16">
+                <p className="text-gray-500 dark:text-gray-400 mb-4">{error}</p>
+                <Button onClick={fetchMarket} variant="secondary">
+                  Tekrar Dene
+                </Button>
+              </div>
+            ) : decks.length === 0 ? (
+              <div className="text-center py-16">
+                <BookOpen className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                <p className="text-gray-500 dark:text-gray-400 font-medium">
+                  {searchQuery
+                    ? "Aramaniza uygun deste bulunamadi"
+                    : "Henuz deste eklenmemis"}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {decks.map((deck) => {
+                  const isInstalled = installed.has(deck.id);
+                  const isInstalling = installing === deck.id;
+
+                  return (
+                    <div
+                      key={deck.id}
+                      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-all"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-bold">
+                              {CATEGORY_ICONS[deck.category] || deck.category.charAt(0).toUpperCase()}
+                            </span>
+                            <div>
+                              <h3 className="font-semibold text-sm text-gray-900 dark:text-gray-100">
+                                {deck.name}
+                              </h3>
+                              <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                                {deck.author} · {deck.cardCount} kart
+                              </p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                            {deck.description}
+                          </p>
+                          {deck.tags && deck.tags.length > 0 && (
+                            <div className="flex gap-1 mt-2 flex-wrap">
+                              {deck.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-full text-[10px] text-gray-500 dark:text-gray-400"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="ml-3">
+                          {isInstalled ? (
+                            <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                              <CheckCircle2 className="w-5 h-5" />
+                              <span className="text-xs font-medium">Yuklendi</span>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleInstall(deck)}
+                              loading={isInstalling}
+                              className="gap-1 bg-emerald-600 hover:bg-emerald-700"
+                            >
+                              <Download className="w-4 h-4" />
+                              Indir
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Moduller Tab */}
+      {activeTab === "moduller" && (
+        <div className="p-4">
+          <div className="space-y-3">
+            {MODULES.map((mod) => (
+              <button
+                key={mod.id}
+                onClick={() => router.push(mod.route)}
+                className="w-full text-left bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 transition-all hover:shadow-md hover:border-emerald-300 dark:hover:border-emerald-700 active:scale-[0.99]"
+              >
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
+                    <Headphones className="w-6 h-6 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                        {mod.name}
+                      </h3>
+                      <Play className="w-5 h-5 text-emerald-500" />
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+                      {mod.description}
+                    </p>
+                    <div className="flex gap-1 mt-2 flex-wrap">
+                      {mod.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2 py-0.5 bg-orange-50 dark:bg-orange-900/20 rounded-full text-[10px] text-orange-600 dark:text-orange-400 font-medium"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          <div className="text-center mt-8 py-8">
+            <Puzzle className="w-10 h-10 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              Daha fazla modul yakinda eklenecek
+            </p>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
